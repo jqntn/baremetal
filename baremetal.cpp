@@ -1,0 +1,1 @@
+extern "C" void _start() { asm("mov $0x13,%ax; int $0x10"); *(volatile unsigned char*)(0xA0000+50*320+100)=12; for(;;); }
