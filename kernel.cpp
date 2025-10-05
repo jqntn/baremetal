@@ -36,19 +36,5 @@ extern "C"
     }
 
     xvInitGfxMode(MODE13H);
-
-    sglClear(BLACK);
-
-    sglDrawRect(150, 10, 100, 50, GREEN);
-
-    sglDrawLine(120, 14, 24, 30, RED);
-
-    sglDrawCircle(100, 100, 50, CYAN);
-
-    sglDrawFilledTri(100, 100, 50, 150, 120, 120, MAGENTA);
-
-    sglDrawTri(200, 100, 150, 170, 250, 190, YELLOW);
-
-    sglSwapBuffers();
   }
 }
