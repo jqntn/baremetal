@@ -5,4 +5,4 @@ clang++ -target i386-elf -ffreestanding -fno-exceptions -fno-rtti -c kernel.cpp 
 
 ld.lld -m elf_i386 kernel.o vga.o sgl.o -o kernel.elf
 
-qemu-system-i386 -kernel kernel.elf -display sdl,gl=on -vga virtio
+qemu-system-i386 -kernel kernel.elf -display sdl -vga std
