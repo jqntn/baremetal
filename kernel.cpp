@@ -10,9 +10,14 @@ extern "C"
   void _start()
   {
     volatile unsigned short* vga = (unsigned short*)0xB8000;
+
+    for (int i = 0; i < 80 * 25; ++i)
+      vga[i] = (0x0F << 8) | ' ';
+
     const char* msg = "Hello, world!";
     for (int i = 0; msg[i]; ++i)
       vga[i] = (0x0F << 8) | msg[i];
+
     for (;;)
       ;
   }
