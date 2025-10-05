@@ -10,6 +10,18 @@ extern "C"
       ".long 0;"
       ".long -(0x1BADB002+0);");
 
+  void outb(unsigned short port, unsigned char val)
+  {
+    asm volatile("outb %0, %1" : : "a"(val), "Nd"(port));
+  }
+
+  unsigned char insb(unsigned short port)
+  {
+    unsigned char ret = 0;
+    asm volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    return ret;
+  }
+
   void _start()
   {
     volatile unsigned short* vgat = (unsigned short*)0xB8000;
