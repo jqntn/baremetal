@@ -45,6 +45,9 @@ extern "C"
     for (int i = 0; msg[i]; ++i)
       vgat[i] = (0x0F << 8) | msg[i];
 
-    xvInitGfxMode(MODE13H);
+    // xvInitGfxMode(MODE13H);
+
+    for (;;)
+      ;
   }
 }
