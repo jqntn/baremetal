@@ -3,7 +3,7 @@
 setlocal
 
 set CL_FLAGS=/nologo /c /Zl /EHs-c- /GR- /GS- /Oi /Fo"obj\\"
-set LINK_FLAGS=/NOLOGO /MACHINE:X64 /ENTRY:_start /BASE:0x100000 /NODEFAULTLIB /SUBSYSTEM:NATIVE /DRIVER /MERGE:.rdata=.text
+set LINK_FLAGS=/NOLOGO /MACHINE:X86 /ENTRY:_start /BASE:0x100000 /NODEFAULTLIB /SUBSYSTEM:NATIVE /DRIVER /MERGE:.rdata=.text
 
 if not exist bin md bin
 if not exist obj md obj
