@@ -152,5 +152,8 @@ extern "C"
   void _start()
   {
     printf("Hello, world!\n");
+
+    for (;;)
+      ;
   }
 }
