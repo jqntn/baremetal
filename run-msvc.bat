@@ -10,8 +10,6 @@ if not exist obj md obj
 if not exist boot md boot
 
 cl %CL_FLAGS% "kernel.cpp"
-cl %CL_FLAGS% "thirdparty\xvg\vga\vga.c"
-cl %CL_FLAGS% "thirdparty\xvg\sgl\sgl.c"
 
 link %LINK_FLAGS% "obj\kernel.obj" /OUT:"boot\kernel.exe"
 
