@@ -3,15 +3,16 @@
 set CLANG_FLAGS=-c --target=x86_64-elf -ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -fno-strict-aliasing
 
 if not exist bin md bin
+if not exist obj md obj
 if not exist boot md boot
 
-clang %CLANG_FLAGS% thirdparty\xvg\vga\vga.c -o bin\vga.o
-clang %CLANG_FLAGS% thirdparty\xvg\sgl\sgl.c -o bin\sgl.o
+clang %CLANG_FLAGS% "thirdparty\xvg\vga\vga.c" -o "obj\vga.o"
+clang %CLANG_FLAGS% "thirdparty\xvg\sgl\sgl.c" -o "obj\sgl.o"
 
-clang++ %CLANG_FLAGS% kernel.cpp -o bin\kernel.o
+clang++ %CLANG_FLAGS% "kernel.cpp" -o "obj\kernel.o"
 
-ld.lld -m elf_x86_64 --entry=_start --Ttext=0x100000 --image-base=0x100000 --omagic --nostdlib --static bin\kernel.o bin\vga.o bin\sgl.o -o boot\kernel.elf
+ld.lld -m elf_x86_64 --entry=_start --Ttext=0x100000 --image-base=0x100000 --omagic --nostdlib --static "obj\kernel.o" "obj\vga.o" "obj\sgl.o" -o "boot\kernel.elf"
 
-simpleboot -vv -c boot disk.img
+"thirdparty\simpleboot\simpleboot.exe" -vv -c "boot" "bin\disk.img"
 
-qemu-system-x86_64 -drive file=disk.img,format=raw -display sdl -vga std -serial stdio
+qemu-system-x86_64 -drive file="bin\disk.img",format=raw -display sdl -vga std -serial stdio
