@@ -156,6 +156,8 @@ extern "C"
   {
     printf("Hello, world!\n");
 
+    vgat_hello_world();
+
     for (;;)
       ;
   }
