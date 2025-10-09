@@ -5,13 +5,6 @@ extern "C"
 #include "thirdparty/xvg/sgl/sgl.h"
 #include "thirdparty/xvg/vga/vga.h"
 
-  asm(".section .multiboot;"
-      ".align 4;"
-      "multiboot_header:;"
-      ".long 0x1BADB002;"
-      ".long 0;"
-      ".long -(0x1BADB002+0);");
-
   void outb(unsigned short port, unsigned char val)
   {
     asm volatile("outb %0, %1" : : "a"(val), "Nd"(port));
@@ -149,12 +142,8 @@ extern "C"
     __builtin_va_end(args);
   }
 
-  void _start()
+  void vgat_hello_world()
   {
-    printf("Hello, world!\n");
-
-    xvInitGfxMode(MODE03H);
-
     volatile unsigned short* vgat = (unsigned short*)0xB8000;
 
     for (int i = 0; i < 80 * 25; ++i)
@@ -163,6 +152,11 @@ extern "C"
     const char* msg = "Hello, world!";
     for (int i = 0; msg[i]; ++i)
       vgat[i] = (0x0F << 8) | msg[i];
+  }
+
+  void _start()
+  {
+    printf("Hello, world!\n");
 
     for (;;)
       ;
