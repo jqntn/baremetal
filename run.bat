@@ -12,8 +12,6 @@ clang++ %CLANG_FLAGS% kernel.cpp -o bin\kernel.o
 
 ld.lld -m elf_i386 --entry=_start --Ttext=0x100000 --image-base=0x100000 --omagic --nostdlib --static bin\kernel.o bin\vga.o bin\sgl.o -o boot\kernel.elf
 
-::qemu-system-x86_64 -kernel boot\kernel.elf -display sdl -vga std -serial stdio
-
 simpleboot -vv boot disk.img
 
 qemu-system-x86_64 -drive file=disk.img,format=raw -display sdl -vga std -serial stdio
