@@ -5,6 +5,7 @@ extern "C"
 #include "thirdparty/xvg/sgl/sgl.h"
 #include "thirdparty/xvg/vga/vga.h"
 
+#ifndef _MSC_VER
   asm(".section .multiboot;"
       ".align 4;"
       "multiboot_header:;"
@@ -14,7 +15,7 @@ extern "C"
 
   void outb(unsigned short port, unsigned char val)
   {
-    asm volatile("outb %0, %1" ::"a"(val), "Nd"(port));
+    asm volatile("outb %0, %1" : : "a"(val), "Nd"(port));
   }
 
   unsigned char insb(unsigned short port)
@@ -26,7 +27,7 @@ extern "C"
 
   void outl(unsigned short port, unsigned int val)
   {
-    asm volatile("outl %0,%1" ::"a"(val), "Nd"(port));
+    asm volatile("outl %0,%1" : : "a"(val), "Nd"(port));
   }
 
   unsigned int insl(unsigned short port)
@@ -35,6 +36,7 @@ extern "C"
     asm volatile("inl %1,%0" : "=a"(ret) : "Nd"(port));
     return ret;
   }
+#endif
 
   /**
    * Display (extremely minimal) formated message on serial
@@ -48,6 +50,7 @@ extern "C"
    */
   void printf(const char* fmt, ...)
   {
+#ifndef _MSC_VER
     va_list args;
     int arg, len, sign, i;
     unsigned int uarg;
@@ -56,12 +59,13 @@ extern "C"
 #define PUTC(c)                                                                \
   asm volatile("xorl %%ebx, %%ebx; movb %0, %%bl;"                             \
                "movl $10000,%%ecx;"                                            \
-               "1:inb %%dx, %%al;pause;"                                       \
-               "cmpb $0xff,%%al;je 2f;"                                        \
-               "dec %%ecx;jz 2f;"                                              \
-               "andb $0x20,%%al;jz 1b;"                                        \
-               "subb $5,%%dl;movb %%bl, %%al;outb %%al, %%dx;2:" ::"a"(c),     \
-               "d"(0x3fd)                                                      \
+               "1: inb %%dx, %%al; pause;"                                     \
+               "cmpb $0xff,%%al; je 2f;"                                       \
+               "dec %%ecx; jz 2f;"                                             \
+               "andb $0x20,%%al; jz 1b;"                                       \
+               "subb $5,%%dl; movb %%bl, %%al; outb %%al, %%dx; 2:"            \
+               :                                                               \
+               : "a"(c), "d"(0x3fd)                                            \
                : "rbx", "rcx");
     /* parse format and print */
     va_start(args, fmt);
@@ -133,6 +137,7 @@ extern "C"
       fmt++;
     }
     va_end(args);
+#endif
   }
 
   void vgat_hello_world()
