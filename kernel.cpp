@@ -151,10 +151,6 @@ extern "C"
   {
     printf("Hello, world!\n");
 
-    vgat_hello_world();
-
-    xvInitGfxMode(MODE13H);
-
     for (;;)
       ;
   }
