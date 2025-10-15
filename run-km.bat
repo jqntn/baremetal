@@ -10,10 +10,8 @@ if not exist obj md obj
 if not exist boot md boot
 
 clang++ %CLANG_FLAGS% "kernel.cpp" -o "obj\kernel.o"
-clang %CLANG_FLAGS% "thirdparty\xvg\vga\vga.c" -o "obj\vga.o"
-clang %CLANG_FLAGS% "thirdparty\xvg\sgl\sgl.c" -o "obj\sgl.o"
 
-ld.lld %LD_FLAGS% "obj\kernel.o" "obj\vga.o" "obj\sgl.o" -o "boot\kernel.elf"
+ld.lld %LD_FLAGS% "obj\kernel.o" -o "boot\kernel.elf"
 
 if errorlevel 1 exit /b 1
 

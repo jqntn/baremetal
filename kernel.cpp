@@ -2,9 +2,6 @@ extern "C"
 {
 #include <stdarg.h>
 
-#include "thirdparty/xvg/sgl/sgl.h"
-#include "thirdparty/xvg/vga/vga.h"
-
 #ifndef _MSC_VER
   asm(".section .multiboot;"
       ".align 4;"
