@@ -13,6 +13,7 @@ extern "C"
       ".long 0x1BADB002;"
       ".long 0;"
       ".long -(0x1BADB002+0);");
+#endif
 
   void outb(unsigned short port, unsigned char val)
   {
@@ -58,14 +59,12 @@ extern "C"
                  :);
     return ret;
   }
-#endif
 
   /**
    * Display (extremely minimal) formated message on serial
    */
   void printf_serial(const char* fmt, ...)
   {
-#ifndef _MSC_VER
     va_list args;
     int arg, len, sign, i;
     unsigned int uarg;
@@ -150,7 +149,6 @@ extern "C"
       fmt++;
     }
     va_end(args);
-#endif
   }
 
 #define CONSOLE_SERIAL 0x3f8
