@@ -515,66 +515,6 @@ extern "C"
       uuid[15]);
   }
 
-  /**
-   * Dump ACPI tables
-   */
-  void dumpacpi(uint64_t addr)
-  {
-    uint8_t *ptr, *end, *p;
-    sdt_hdr_t *hdr = (sdt_hdr_t*)addr, *tbl = 0;
-
-    /* print root table, either RSDT or XSDT */
-    printf(" 0x%08x%08x %c%c%c%c size %d\n",
-           addr >> 32,
-           addr & 0xffffffff,
-           hdr->magic[0],
-           hdr->magic[1],
-           hdr->magic[2],
-           hdr->magic[3],
-           hdr->size);
-    /* iterate on tables */
-    if (hdr->magic[1] == 'S' && hdr->magic[2] == 'D' && hdr->magic[3] == 'T')
-      for (ptr = (uint8_t*)(addr + sizeof(sdt_hdr_t)),
-          end = (uint8_t*)(addr + hdr->size);
-           ptr < end;
-           ptr += hdr->magic[0] == 'X' ? 8 : 4) {
-        /* with RSDT we have 32-bit addresses, but with XSDT 64-bit */
-        tbl =
-          (hdr->magic[0] == 'X' ? (sdt_hdr_t*)((uintptr_t)*((uint64_t*)ptr))
-                                : (sdt_hdr_t*)((uintptr_t)*((uint32_t*)ptr)));
-        printf("  0x%08x%08x %c%c%c%c size %d",
-               (uint64_t)tbl >> 32,
-               (uint64_t)tbl & 0xffffffff,
-               tbl->magic[0],
-               tbl->magic[1],
-               tbl->magic[2],
-               tbl->magic[3],
-               tbl->size);
-        /* if it's FADT, print the DSDT in it too. There's a 32-bit address and
-         * a 64-bit address for it as well */
-        if (tbl->magic[0] == 'F' && tbl->magic[1] == 'A' &&
-            tbl->magic[2] == 'C' && tbl->magic[3] == 'P') {
-          p = tbl->rev >= 2 && tbl->size > 148
-                ? (uint8_t*)(uintptr_t)((fadt_t*)tbl)->x_dsdt
-                : (uint8_t*)(uintptr_t)((fadt_t*)tbl)->dsdt;
-          /* it is possible that the DSDT data is actually GUDT or DTB encoded
-           * (loader's feature, not in ACPI) */
-          if (p[0] == 0xD0 && p[1] == 0x0D && p[2] == 0xFE && p[3] == 0xED)
-            printf(" (DTB ");
-          else
-            printf(" (%c%c%c%c ", p[0], p[1], p[2], p[3]);
-          /* print out address */
-          if (tbl->rev >= 2 && tbl->size > 148)
-            printf("0x%08x%08x)",
-                   ((fadt_t*)tbl)->x_dsdt >> 32,
-                   ((fadt_t*)tbl)->x_dsdt & 0xffffffff);
-          else
-            printf("0x%08x)", p);
-        }
-        printf("\n");
-      }
-  }
-
   void _start(uint32_t magic, uintptr_t addr)
   {
     vgat_hello_world();
@@ -676,14 +616,10 @@ extern "C"
                  ((multiboot_tag_smbios_t*)mb_tag)->minor);
           break;
         case MULTIBOOT_TAG_TYPE_ACPI_OLD:
-          printf("ACPI table (1.0, old RSDP)");
-          dumpacpi((uint64_t)*(
-            (uint32_t*)&((multiboot_tag_old_acpi_t*)mb_tag)->rsdp[16]));
+          printf("ACPI table (1.0, old RSDP)\n");
           break;
         case MULTIBOOT_TAG_TYPE_ACPI_NEW:
-          printf("ACPI table (2.0, new RSDP)");
-          dumpacpi(
-            *((uint64_t*)&((multiboot_tag_new_acpi_t*)mb_tag)->rsdp[24]));
+          printf("ACPI table (2.0, new RSDP)\n");
           break;
         case MULTIBOOT_TAG_TYPE_EDID:
           printf("EDID info\n");
