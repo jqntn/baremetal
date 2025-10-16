@@ -85,7 +85,7 @@ extern "C"
   asm volatile("xorl %%ebx, %%ebx; movb %0, %%bl;"                             \
                "movl $10000, %%ecx;"                                           \
                "1: inb %%dx, %%al; pause;"                                     \
-               "cmpb $0xff, %%al; je 2f;"                                      \
+               "cmpb $0xFF, %%al; je 2f;"                                      \
                "dec %%ecx; jz 2f;"                                             \
                "andb $0x20, %%al; jz 1b;"                                      \
                "subb $5, %%dl; movb %%bl, %%al; outb %%al, %%dx; 2:;"          \
@@ -566,9 +566,9 @@ extern "C"
               " base_addr = 0x%8x%8x,"
               " length = 0x%8x%8x, type = 0x%x %s, res = 0x%x\n",
               (unsigned)(p_mb_mmap->base_addr >> 32),
-              (unsigned)(p_mb_mmap->base_addr & 0xffffffff),
+              (unsigned)(p_mb_mmap->base_addr & 0xFFFFFFFF),
               (unsigned)(p_mb_mmap->length >> 32),
-              (unsigned)(p_mb_mmap->length & 0xffffffff),
+              (unsigned)(p_mb_mmap->length & 0xFFFFFFFF),
               (unsigned)p_mb_mmap->type,
               p_mb_mmap->type == MULTIBOOT_MEMORY_AVAILABLE
                 ? "free"
@@ -583,7 +583,7 @@ extern "C"
           printf("framebuffer\n");
           printf(" address 0x%8x%8x pitch %d\n",
                  (unsigned)(p_mb_tag_fb->framebuffer_addr >> 32),
-                 (unsigned)(p_mb_tag_fb->framebuffer_addr & 0xffffffff),
+                 (unsigned)(p_mb_tag_fb->framebuffer_addr & 0xFFFFFFFF),
                  p_mb_tag_fb->framebuffer_pitch);
           printf(" width %d height %d depth %d bpp\n",
                  p_mb_tag_fb->framebuffer_width,
