@@ -166,11 +166,7 @@ extern "C"
 #define CONSOLE_SERIAL 0x3f8
 #define CONSOLE_FB
 #define CONSOLE_VGA
-#define CONSOLE_UEFI
-#define CONSOLE_BOCHS_E9
 
-  fossbios_t* fossbios;
-  efi_system_table_t* efi_system_table;
   multiboot_tag_framebuffer_t vidmode;
 
 #ifdef CONSOLE_FB
@@ -185,21 +181,18 @@ extern "C"
   void console_init()
   {
 #ifdef CONSOLE_SERIAL
-    if (fossbios && fossbios->serial)
-      fossbios->serial->setmode(0, 115200, 8, 0, 1);
-    else
-      asm volatile("movl %0, %%edx;"
-                   "xorb %%al, %%al; outb %%al, %%dx;"
-                   "movb $0x80, %%al; addb $2, %%dl; outb %%al, %%dx;"
-                   "movb $1, %%al; subb $3, %%dl; outb %%al, %%dx;"
-                   "xorb %%al, %%al; incb %%dl; outb %%al, %%dx;"
-                   "incb %%dl; outb %%al, %%dx;"
-                   "movb $0x43, %%al; incb %%dl; outb %%al, %%dx;"
-                   "movb $0x8, %%al; incb %%dl; outb %%al, %%dx;"
-                   "xorb %%al, %%al; subb $4, %%dl; inb %%dx, %%al"
-                   :
-                   : "a"(CONSOLE_SERIAL + 1)
-                   : "edx");
+    asm volatile("movl %0, %%edx;"
+                 "xorb %%al, %%al; outb %%al, %%dx;"
+                 "movb $0x80, %%al; addb $2, %%dl; outb %%al, %%dx;"
+                 "movb $1, %%al; subb $3, %%dl; outb %%al, %%dx;"
+                 "xorb %%al, %%al; incb %%dl; outb %%al, %%dx;"
+                 "incb %%dl; outb %%al, %%dx;"
+                 "movb $0x43, %%al; incb %%dl; outb %%al, %%dx;"
+                 "movb $0x8, %%al; incb %%dl; outb %%al, %%dx;"
+                 "xorb %%al, %%al; subb $4, %%dl; inb %%dx, %%al"
+                 :
+                 : "a"(CONSOLE_SERIAL + 1)
+                 : "edx");
 #endif
 #ifdef CONSOLE_FB
     fb_x = fb_y = 4;
@@ -207,45 +200,29 @@ extern "C"
 #endif
 #ifdef CONSOLE_VGA
     vga_x = vga_y = 0;
-    if (!vidmode.framebuffer_addr && !efi_system_table)
+    if (!vidmode.framebuffer_addr)
       memset((void*)0xB8000, 0, 160 * 25);
-#endif
-#ifdef CONSOLE_UEFI
-    if (efi_system_table && efi_system_table->ConOut)
-      efi_system_table->ConOut->Reset(efi_system_table->ConOut, 0);
 #endif
   }
 
   void console_putc(uint8_t c)
   {
-#ifdef CONSOLE_UEFI
-    uint16_t tmp[2];
+#ifdef CONSOLE_SERIAL
+    asm volatile("xorl %%ebx, %%ebx; movb %0, %%bl;"
+                 "movl $10000, %%ecx;"
+                 "1: inb %%dx, %%al; pause;"
+                 "cmpb $0xff, %%al; je 2f;"
+                 "dec %%ecx; jz 2f;"
+                 "andb $0x20, %%al; jz 1b;"
+                 "subb $5, %%dl; movb %%bl, %%al; outb %%al, %%dx; 2:;"
+                 :
+                 : "a"(c), "d"(CONSOLE_SERIAL + 5)
+                 : "rbx", "rcx");
 #endif
 #ifdef CONSOLE_FB
     psf2_t* font = (psf2_t*)font_psf;
     uint32_t x, y, line, mask, offs, bpl = (font->width + 7) >> 3;
     uint8_t *glyph, *fb = (uint8_t*)vidmode.framebuffer_addr;
-#endif
-    if (fossbios && fossbios->serial)
-      fossbios->serial->send(0, c);
-    else
-      asm volatile("xorl %%ebx, %%ebx; movb %0, %%bl;"
-#ifdef CONSOLE_SERIAL
-                   "movl $10000, %%ecx;"
-                   "1: inb %%dx, %%al; pause;"
-                   "cmpb $0xff, %%al; je 2f;"
-                   "dec %%ecx; jz 2f;"
-                   "andb $0x20, %%al; jz 1b;"
-                   "subb $5, %%dl; movb %%bl, %%al; outb %%al, %%dx; 2:;"
-#endif
-#ifdef CONSOLE_BOCHS_E9
-                   "movb %%bl, %%al; outb %%al, $0xe9;"
-#endif
-                   :
-                   : "a"(c), "d"(CONSOLE_SERIAL + 5)
-                   : "rbx", "rcx");
-
-#ifdef CONSOLE_FB
     if (fb)
       switch (c) {
         case '\r':
@@ -310,7 +287,7 @@ extern "C"
       }
 #endif
 #ifdef CONSOLE_VGA
-    if (!fb && !efi_system_table)
+    if (!vidmode.framebuffer_addr)
       switch (c) {
         case '\r':
           vga_x = 0;
@@ -330,13 +307,6 @@ extern "C"
             0x0f00 | (c & 0xff);
           break;
       }
-#endif
-#ifdef CONSOLE_UEFI
-    if (efi_system_table && efi_system_table->ConOut) {
-      tmp[0] = c;
-      tmp[1] = 0;
-      efi_system_table->ConOut->OutputString(efi_system_table->ConOut, tmp);
-    }
 #endif
   }
 
