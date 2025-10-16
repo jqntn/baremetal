@@ -517,8 +517,6 @@ extern "C"
 
   void _start(uint32_t magic, uintptr_t addr)
   {
-    vgat_hello_world();
-
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
       printf("Invalid magic number: 0x%x\n", (unsigned)magic);
       goto halt;
