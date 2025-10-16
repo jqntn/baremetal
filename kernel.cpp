@@ -1,11 +1,7 @@
+// TODO: 32bit compat
+
 extern "C"
 {
-#include <stdarg.h>
-#include <stdint.h>
-
-#include "thirdparty/simpleboot/loader.h"
-#include "thirdparty/simpleboot/simpleboot.h"
-
 #ifndef _MSC_VER
   asm(".section .multiboot;"
       ".align 4;"
@@ -14,6 +10,12 @@ extern "C"
       ".long 0;"
       ".long -(0x1BADB002+0);");
 #endif
+
+#include <stdarg.h>
+#include <stdint.h>
+
+#include "thirdparty/simpleboot/loader.h"
+#include "thirdparty/simpleboot/simpleboot.h"
 
   void outb(unsigned short port, unsigned char val)
   {
@@ -52,12 +54,22 @@ extern "C"
   int memcmp(const void* s1, const void* s2, uint32_t n)
   {
     int ret = 0;
-    asm volatile("cld; repe cmpsb; xorl %%eax, %%eax; movb -1(%%rdi), "
-                 "%%al; subb -1(%%rsi), %%al;"
+    asm volatile("cld; repe cmpsb; xorl %%eax, %%eax; movb -1(%%edi), "
+                 "%%al; subb -1(%%esi), %%al;"
                  : "=a"(ret)
                  : "D"(s1), "S"(s2), "c"(n)
                  :);
     return ret;
+  }
+
+  long long __divdi3(long long a, long long b)
+  {
+    return a / b;
+  }
+
+  long long __moddi3(long long a, long long b)
+  {
+    return a % b;
   }
 
   /**
@@ -153,169 +165,28 @@ extern "C"
 
 #define CONSOLE_SERIAL 0x3f8
 #define CONSOLE_FB
+#define CONSOLE_VGA
+#define CONSOLE_UEFI
+#define CONSOLE_BOCHS_E9
+
+  fossbios_t* fossbios;
+  efi_system_table_t* efi_system_table;
+  multiboot_tag_framebuffer_t vidmode;
 
 #ifdef CONSOLE_FB
-  typedef struct
-  {
-    uint32_t magic, version, headersize, flags, numglyph, bytesperglyph, height,
-      width;
-  } __attribute__((packed)) psf2_t;
-  uint8_t font_psf[2080] = {
-    114, 181, 74,  134, 0,   0,   0,   0,   32,  0,   0,   0,   0,   0,   12,
-    0,   128, 0,   0,   0,   16,  0,   0,   0,   16,  0,   0,   0,   8,   0,
-    0,   0,   0,   0,   218, 2,   128, 130, 2,   128, 130, 2,   128, 182, 0,
-    0,   0,   0,   0,   0,   126, 129, 165, 129, 129, 189, 153, 129, 129, 126,
-    0,   0,   0,   0,   0,   0,   126, 255, 219, 255, 255, 195, 231, 255, 255,
-    126, 0,   0,   0,   0,   0,   0,   0,   0,   108, 254, 254, 254, 254, 124,
-    56,  16,  0,   0,   0,   0,   0,   0,   0,   0,   16,  56,  124, 254, 124,
-    56,  16,  0,   0,   0,   0,   0,   0,   0,   0,   24,  60,  60,  231, 231,
-    231, 24,  24,  60,  0,   0,   0,   0,   0,   0,   0,   24,  60,  126, 255,
-    255, 126, 24,  24,  60,  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    24,  60,  60,  24,  0,   0,   0,   0,   0,   0,   255, 255, 255, 255, 255,
-    255, 231, 195, 195, 231, 255, 255, 255, 255, 255, 255, 0,   0,   0,   0,
-    0,   60,  102, 66,  66,  102, 60,  0,   0,   0,   0,   0,   255, 255, 255,
-    255, 255, 195, 153, 189, 189, 153, 195, 255, 255, 255, 255, 255, 0,   0,
-    30,  14,  26,  50,  120, 204, 204, 204, 204, 120, 0,   0,   0,   0,   0,
-    0,   60,  102, 102, 102, 102, 60,  24,  126, 24,  24,  0,   0,   0,   0,
-    0,   0,   63,  51,  63,  48,  48,  48,  48,  112, 240, 224, 0,   0,   0,
-    0,   0,   0,   127, 99,  127, 99,  99,  99,  99,  103, 231, 230, 192, 0,
-    0,   0,   0,   0,   0,   24,  24,  219, 60,  231, 60,  219, 24,  24,  0,
-    0,   0,   0,   0,   128, 192, 224, 240, 248, 254, 248, 240, 224, 192, 128,
-    0,   0,   0,   0,   0,   2,   6,   14,  30,  62,  254, 62,  30,  14,  6,
-    2,   0,   0,   0,   0,   0,   0,   24,  60,  126, 24,  24,  24,  126, 60,
-    24,  0,   0,   0,   0,   0,   0,   0,   102, 102, 102, 102, 102, 102, 102,
-    0,   102, 102, 0,   0,   0,   0,   0,   0,   127, 219, 219, 219, 123, 27,
-    27,  27,  27,  27,  0,   0,   0,   0,   0,   124, 198, 96,  56,  108, 198,
-    198, 108, 56,  12,  198, 124, 0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   254, 254, 254, 254, 0,   0,   0,   0,   0,   0,   24,  60,  126,
-    24,  24,  24,  126, 60,  24,  126, 0,   0,   0,   0,   0,   0,   24,  60,
-    126, 24,  24,  24,  24,  24,  24,  24,  0,   0,   0,   0,   0,   0,   24,
-    24,  24,  24,  24,  24,  24,  126, 60,  24,  0,   0,   0,   0,   0,   0,
-    0,   0,   0,   24,  12,  254, 12,  24,  0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   48,  96,  254, 96,  48,  0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   192, 192, 192, 254, 0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   40,  108, 254, 108, 40,  0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   16,  56,  56,  124, 124, 254, 254, 0,   0,
-    0,   0,   0,   0,   0,   0,   0,   254, 254, 124, 124, 56,  56,  16,  0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   24,  60,  60,  60,  24,  24,  24,  0,
-    24,  24,  0,   0,   0,   0,   0,   102, 102, 102, 36,  0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   108, 108, 254, 108, 108,
-    108, 254, 108, 108, 0,   0,   0,   0,   24,  24,  124, 198, 194, 192, 124,
-    6,   6,   134, 198, 124, 24,  24,  0,   0,   0,   0,   0,   0,   194, 198,
-    12,  24,  48,  96,  198, 134, 0,   0,   0,   0,   0,   0,   56,  108, 108,
-    56,  118, 220, 204, 204, 204, 118, 0,   0,   0,   0,   0,   48,  48,  48,
-    32,  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   12,
-    24,  48,  48,  48,  48,  48,  48,  24,  12,  0,   0,   0,   0,   0,   0,
-    48,  24,  12,  12,  12,  12,  12,  12,  24,  48,  0,   0,   0,   0,   0,
-    0,   0,   0,   0,   102, 60,  255, 60,  102, 0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   24,  24,  126, 24,  24,  0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   24,  24,  24,  48,  0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   254, 0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   24,  24,
-    0,   0,   0,   0,   0,   0,   0,   0,   2,   6,   12,  24,  48,  96,  192,
-    128, 0,   0,   0,   0,   0,   0,   56,  108, 198, 198, 214, 214, 198, 198,
-    108, 56,  0,   0,   0,   0,   0,   0,   24,  56,  120, 24,  24,  24,  24,
-    24,  24,  126, 0,   0,   0,   0,   0,   0,   124, 198, 6,   12,  24,  48,
-    96,  192, 198, 254, 0,   0,   0,   0,   0,   0,   124, 198, 6,   6,   60,
-    6,   6,   6,   198, 124, 0,   0,   0,   0,   0,   0,   12,  28,  60,  108,
-    204, 254, 12,  12,  12,  30,  0,   0,   0,   0,   0,   0,   254, 192, 192,
-    192, 252, 6,   6,   6,   198, 124, 0,   0,   0,   0,   0,   0,   56,  96,
-    192, 192, 252, 198, 198, 198, 198, 124, 0,   0,   0,   0,   0,   0,   254,
-    198, 6,   6,   12,  24,  48,  48,  48,  48,  0,   0,   0,   0,   0,   0,
-    124, 198, 198, 198, 124, 198, 198, 198, 198, 124, 0,   0,   0,   0,   0,
-    0,   124, 198, 198, 198, 126, 6,   6,   6,   12,  120, 0,   0,   0,   0,
-    0,   0,   0,   0,   24,  24,  0,   0,   0,   24,  24,  0,   0,   0,   0,
-    0,   0,   0,   0,   0,   24,  24,  0,   0,   0,   24,  24,  48,  0,   0,
-    0,   0,   0,   0,   0,   6,   12,  24,  48,  96,  48,  24,  12,  6,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   126, 0,   0,   126, 0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   96,  48,  24,  12,  6,   12,  24,  48,
-    96,  0,   0,   0,   0,   0,   0,   124, 198, 198, 12,  24,  24,  24,  0,
-    24,  24,  0,   0,   0,   0,   0,   0,   0,   124, 198, 198, 222, 222, 222,
-    220, 192, 124, 0,   0,   0,   0,   0,   0,   16,  56,  108, 198, 198, 254,
-    198, 198, 198, 198, 0,   0,   0,   0,   0,   0,   252, 102, 102, 102, 124,
-    102, 102, 102, 102, 252, 0,   0,   0,   0,   0,   0,   60,  102, 194, 192,
-    192, 192, 192, 194, 102, 60,  0,   0,   0,   0,   0,   0,   248, 108, 102,
-    102, 102, 102, 102, 102, 108, 248, 0,   0,   0,   0,   0,   0,   254, 102,
-    98,  104, 120, 104, 96,  98,  102, 254, 0,   0,   0,   0,   0,   0,   254,
-    102, 98,  104, 120, 104, 96,  96,  96,  240, 0,   0,   0,   0,   0,   0,
-    60,  102, 194, 192, 192, 222, 198, 198, 102, 58,  0,   0,   0,   0,   0,
-    0,   198, 198, 198, 198, 254, 198, 198, 198, 198, 198, 0,   0,   0,   0,
-    0,   0,   60,  24,  24,  24,  24,  24,  24,  24,  24,  60,  0,   0,   0,
-    0,   0,   0,   30,  12,  12,  12,  12,  12,  204, 204, 204, 120, 0,   0,
-    0,   0,   0,   0,   230, 102, 102, 108, 120, 120, 108, 102, 102, 230, 0,
-    0,   0,   0,   0,   0,   240, 96,  96,  96,  96,  96,  96,  98,  102, 254,
-    0,   0,   0,   0,   0,   0,   198, 238, 254, 254, 214, 198, 198, 198, 198,
-    198, 0,   0,   0,   0,   0,   0,   198, 230, 246, 254, 222, 206, 198, 198,
-    198, 198, 0,   0,   0,   0,   0,   0,   124, 198, 198, 198, 198, 198, 198,
-    198, 198, 124, 0,   0,   0,   0,   0,   0,   252, 102, 102, 102, 124, 96,
-    96,  96,  96,  240, 0,   0,   0,   0,   0,   0,   124, 198, 198, 198, 198,
-    198, 198, 214, 222, 124, 12,  14,  0,   0,   0,   0,   252, 102, 102, 102,
-    124, 108, 102, 102, 102, 230, 0,   0,   0,   0,   0,   0,   124, 198, 198,
-    96,  56,  12,  6,   198, 198, 124, 0,   0,   0,   0,   0,   0,   126, 126,
-    90,  24,  24,  24,  24,  24,  24,  60,  0,   0,   0,   0,   0,   0,   198,
-    198, 198, 198, 198, 198, 198, 198, 198, 124, 0,   0,   0,   0,   0,   0,
-    198, 198, 198, 198, 198, 198, 198, 108, 56,  16,  0,   0,   0,   0,   0,
-    0,   198, 198, 198, 198, 214, 214, 214, 254, 238, 108, 0,   0,   0,   0,
-    0,   0,   198, 198, 108, 124, 56,  56,  124, 108, 198, 198, 0,   0,   0,
-    0,   0,   0,   102, 102, 102, 102, 60,  24,  24,  24,  24,  60,  0,   0,
-    0,   0,   0,   0,   254, 198, 134, 12,  24,  48,  96,  194, 198, 254, 0,
-    0,   0,   0,   0,   0,   60,  48,  48,  48,  48,  48,  48,  48,  48,  60,
-    0,   0,   0,   0,   0,   0,   0,   128, 192, 224, 112, 56,  28,  14,  6,
-    2,   0,   0,   0,   0,   0,   0,   60,  12,  12,  12,  12,  12,  12,  12,
-    12,  60,  0,   0,   0,   0,   16,  56,  108, 198, 0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-    0,   0,   0,   0,   0,   255, 0,   0,   48,  48,  24,  0,   0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   120,
-    12,  124, 204, 204, 204, 118, 0,   0,   0,   0,   0,   0,   224, 96,  96,
-    120, 108, 102, 102, 102, 102, 124, 0,   0,   0,   0,   0,   0,   0,   0,
-    0,   124, 198, 192, 192, 192, 198, 124, 0,   0,   0,   0,   0,   0,   28,
-    12,  12,  60,  108, 204, 204, 204, 204, 118, 0,   0,   0,   0,   0,   0,
-    0,   0,   0,   124, 198, 254, 192, 192, 198, 124, 0,   0,   0,   0,   0,
-    0,   56,  108, 100, 96,  240, 96,  96,  96,  96,  240, 0,   0,   0,   0,
-    0,   0,   0,   0,   0,   118, 204, 204, 204, 204, 204, 124, 12,  204, 120,
-    0,   0,   0,   224, 96,  96,  108, 118, 102, 102, 102, 102, 230, 0,   0,
-    0,   0,   0,   0,   24,  24,  0,   56,  24,  24,  24,  24,  24,  60,  0,
-    0,   0,   0,   0,   0,   6,   6,   0,   14,  6,   6,   6,   6,   6,   6,
-    102, 102, 60,  0,   0,   0,   224, 96,  96,  102, 108, 120, 120, 108, 102,
-    230, 0,   0,   0,   0,   0,   0,   56,  24,  24,  24,  24,  24,  24,  24,
-    24,  60,  0,   0,   0,   0,   0,   0,   0,   0,   0,   236, 254, 214, 214,
-    214, 214, 198, 0,   0,   0,   0,   0,   0,   0,   0,   0,   220, 102, 102,
-    102, 102, 102, 102, 0,   0,   0,   0,   0,   0,   0,   0,   0,   124, 198,
-    198, 198, 198, 198, 124, 0,   0,   0,   0,   0,   0,   0,   0,   0,   220,
-    102, 102, 102, 102, 102, 124, 96,  96,  240, 0,   0,   0,   0,   0,   0,
-    118, 204, 204, 204, 204, 204, 124, 12,  12,  30,  0,   0,   0,   0,   0,
-    0,   220, 118, 102, 96,  96,  96,  240, 0,   0,   0,   0,   0,   0,   0,
-    0,   0,   124, 198, 96,  56,  12,  198, 124, 0,   0,   0,   0,   0,   0,
-    16,  48,  48,  252, 48,  48,  48,  48,  54,  28,  0,   0,   0,   0,   0,
-    0,   0,   0,   0,   204, 204, 204, 204, 204, 204, 118, 0,   0,   0,   0,
-    0,   0,   0,   0,   0,   102, 102, 102, 102, 102, 60,  24,  0,   0,   0,
-    0,   0,   0,   0,   0,   0,   198, 198, 214, 214, 214, 254, 108, 0,   0,
-    0,   0,   0,   0,   0,   0,   0,   198, 108, 56,  56,  56,  108, 198, 0,
-    0,   0,   0,   0,   0,   0,   0,   0,   198, 198, 198, 198, 198, 198, 126,
-    6,   12,  248, 0,   0,   0,   0,   0,   0,   254, 204, 24,  48,  96,  198,
-    254, 0,   0,   0,   0,   0,   0,   14,  24,  24,  24,  112, 24,  24,  24,
-    24,  14,  0,   0,   0,   0,   0,   0,   24,  24,  24,  24,  24,  24,  24,
-    24,  24,  24,  24,  24,  0,   0,   0,   0,   112, 24,  24,  24,  14,  24,
-    24,  24,  24,  112, 0,   0,   0,   0,   0,   0,   118, 220, 0,   0,   0,
-    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   16,  56,
-    108, 198, 198, 198, 254, 0,   0,   0,   0,   0
-  };
+#include "psf.h"
   uint32_t fb_x, fb_y;
+  uint32_t fb_bg;
 #endif
 #ifdef CONSOLE_VGA
   uint16_t vga_x, vga_y;
 #endif
 
-  fossbios_t* FB;
-  multiboot_tag_framebuffer_t vidmode;
-  uint32_t fb_bg;
-
   void console_init()
   {
 #ifdef CONSOLE_SERIAL
-    if (FB && FB->serial)
-      FB->serial->setmode(0, 115200, 8, 0, 1);
+    if (fossbios && fossbios->serial)
+      fossbios->serial->setmode(0, 115200, 8, 0, 1);
     else
       asm volatile("movl %0, %%edx;"
                    "xorb %%al, %%al; outb %%al, %%dx;"
@@ -332,15 +203,16 @@ extern "C"
 #endif
 #ifdef CONSOLE_FB
     fb_x = fb_y = 4;
+    fb_bg = FB_COLOR(0, 0, 255);
 #endif
 #ifdef CONSOLE_VGA
     vga_x = vga_y = 0;
-    if (!vidmode.framebuffer_addr && !ST)
+    if (!vidmode.framebuffer_addr && !efi_system_table)
       memset((void*)0xB8000, 0, 160 * 25);
 #endif
 #ifdef CONSOLE_UEFI
-    if (ST && ST->ConOut)
-      ST->ConOut->Reset(ST->ConOut, 0);
+    if (efi_system_table && efi_system_table->ConOut)
+      efi_system_table->ConOut->Reset(efi_system_table->ConOut, 0);
 #endif
   }
 
@@ -354,8 +226,8 @@ extern "C"
     uint32_t x, y, line, mask, offs, bpl = (font->width + 7) >> 3;
     uint8_t *glyph, *fb = (uint8_t*)vidmode.framebuffer_addr;
 #endif
-    if (FB && FB->serial)
-      FB->serial->send(0, c);
+    if (fossbios && fossbios->serial)
+      fossbios->serial->send(0, c);
     else
       asm volatile("xorl %%ebx, %%ebx; movb %0, %%bl;"
 #ifdef CONSOLE_SERIAL
@@ -438,7 +310,7 @@ extern "C"
       }
 #endif
 #ifdef CONSOLE_VGA
-    if (!fb && !ST)
+    if (!fb && !efi_system_table)
       switch (c) {
         case '\r':
           vga_x = 0;
@@ -460,10 +332,10 @@ extern "C"
       }
 #endif
 #ifdef CONSOLE_UEFI
-    if (ST && ST->ConOut) {
+    if (efi_system_table && efi_system_table->ConOut) {
       tmp[0] = c;
       tmp[1] = 0;
-      ST->ConOut->OutputString(ST->ConOut, tmp);
+      efi_system_table->ConOut->OutputString(efi_system_table->ConOut, tmp);
     }
 #endif
   }
@@ -618,15 +490,247 @@ extern "C"
       vgat[i] = (0x0F << 8) | msg[i];
   }
 
-  void _start()
+  /**
+   * Print a binary UUID in human readable form
+   */
+  void dumpuuid(const uint8_t* uuid)
   {
-    printf_serial("Hello, world! (printf_serial)\n");
+    printf(
+      "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x%02x%02x\n",
+      uuid[3],
+      uuid[2],
+      uuid[1],
+      uuid[0],
+      uuid[5],
+      uuid[4],
+      uuid[7],
+      uuid[6],
+      uuid[8],
+      uuid[9],
+      uuid[10],
+      uuid[11],
+      uuid[12],
+      uuid[13],
+      uuid[14],
+      uuid[15]);
+  }
 
-    console_init();
-    printf("Hello, world! (printf)\n");
+  /**
+   * Dump ACPI tables
+   */
+  void dumpacpi(uint64_t addr)
+  {
+    uint8_t *ptr, *end, *p;
+    sdt_hdr_t *hdr = (sdt_hdr_t*)addr, *tbl = 0;
 
+    /* print root table, either RSDT or XSDT */
+    printf(" 0x%08x%08x %c%c%c%c size %d\n",
+           addr >> 32,
+           addr & 0xffffffff,
+           hdr->magic[0],
+           hdr->magic[1],
+           hdr->magic[2],
+           hdr->magic[3],
+           hdr->size);
+    /* iterate on tables */
+    if (hdr->magic[1] == 'S' && hdr->magic[2] == 'D' && hdr->magic[3] == 'T')
+      for (ptr = (uint8_t*)(addr + sizeof(sdt_hdr_t)),
+          end = (uint8_t*)(addr + hdr->size);
+           ptr < end;
+           ptr += hdr->magic[0] == 'X' ? 8 : 4) {
+        /* with RSDT we have 32-bit addresses, but with XSDT 64-bit */
+        tbl =
+          (hdr->magic[0] == 'X' ? (sdt_hdr_t*)((uintptr_t)*((uint64_t*)ptr))
+                                : (sdt_hdr_t*)((uintptr_t)*((uint32_t*)ptr)));
+        printf("  0x%08x%08x %c%c%c%c size %d",
+               (uint64_t)tbl >> 32,
+               (uint64_t)tbl & 0xffffffff,
+               tbl->magic[0],
+               tbl->magic[1],
+               tbl->magic[2],
+               tbl->magic[3],
+               tbl->size);
+        /* if it's FADT, print the DSDT in it too. There's a 32-bit address and
+         * a 64-bit address for it as well */
+        if (tbl->magic[0] == 'F' && tbl->magic[1] == 'A' &&
+            tbl->magic[2] == 'C' && tbl->magic[3] == 'P') {
+          p = tbl->rev >= 2 && tbl->size > 148
+                ? (uint8_t*)(uintptr_t)((fadt_t*)tbl)->x_dsdt
+                : (uint8_t*)(uintptr_t)((fadt_t*)tbl)->dsdt;
+          /* it is possible that the DSDT data is actually GUDT or DTB encoded
+           * (loader's feature, not in ACPI) */
+          if (p[0] == 0xD0 && p[1] == 0x0D && p[2] == 0xFE && p[3] == 0xED)
+            printf(" (DTB ");
+          else
+            printf(" (%c%c%c%c ", p[0], p[1], p[2], p[3]);
+          /* print out address */
+          if (tbl->rev >= 2 && tbl->size > 148)
+            printf("0x%08x%08x)",
+                   ((fadt_t*)tbl)->x_dsdt >> 32,
+                   ((fadt_t*)tbl)->x_dsdt & 0xffffffff);
+          else
+            printf("0x%08x)", p);
+        }
+        printf("\n");
+      }
+  }
+
+  void _start(uint32_t magic, uintptr_t addr)
+  {
     vgat_hello_world();
 
+    if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
+      printf("Invalid magic number: 0x%x\n", (unsigned)magic);
+      goto halt;
+    }
+    if (addr & 7) {
+      printf("Unaligned MBI: 0x%x\n", addr);
+      goto halt;
+    }
+
+    unsigned int mbi_size;
+    mbi_size = ((multiboot_info_t*)addr)->total_size;
+    printf("\nAnnounced MBI size 0x%x\n", mbi_size);
+
+    multiboot_mmap_entry_t* p_mb_mmap;
+    multiboot_tag_framebuffer_t* p_mb_tag_fb;
+    multiboot_tag_t *mb_tag, *mb_tag_last;
+    for (mb_tag = (multiboot_tag_t*)(addr + 8),
+        mb_tag_last = (multiboot_tag_t*)(addr + mbi_size);
+         mb_tag < mb_tag_last && mb_tag->type != MULTIBOOT_TAG_TYPE_END;
+         mb_tag =
+           (multiboot_tag_t*)((uint8_t*)mb_tag + ((mb_tag->size + 7) & ~7))) {
+      printf("Tag 0x%x, Size 0x%x\n", mb_tag->type, mb_tag->size);
+      switch (mb_tag->type) {
+        case MULTIBOOT_TAG_TYPE_CMDLINE:
+          printf("Command line = %s\n",
+                 ((multiboot_tag_cmdline_t*)mb_tag)->string);
+          break;
+        case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
+          printf("Boot loader name = %s\n",
+                 ((multiboot_tag_loader_t*)mb_tag)->string);
+          break;
+        case MULTIBOOT_TAG_TYPE_MODULE:
+          printf("Module at 0x%x-0x%x. Command line %s\n",
+                 ((multiboot_tag_module_t*)mb_tag)->mod_start,
+                 ((multiboot_tag_module_t*)mb_tag)->mod_end,
+                 ((multiboot_tag_module_t*)mb_tag)->string);
+          break;
+        case MULTIBOOT_TAG_TYPE_MMAP: {
+          printf("mmap\n");
+          for (p_mb_mmap = ((multiboot_tag_mmap_t*)mb_tag)->entries;
+               (uint8_t*)p_mb_mmap < (uint8_t*)mb_tag + mb_tag->size;
+               p_mb_mmap =
+                 (multiboot_mmap_entry_t*)((uintptr_t)p_mb_mmap +
+                                           ((multiboot_tag_mmap_t*)mb_tag)
+                                             ->entry_size))
+            printf(
+              " base_addr = 0x%8x%8x,"
+              " length = 0x%8x%8x, type = 0x%x %s, res = 0x%x\n",
+              (unsigned)(p_mb_mmap->base_addr >> 32),
+              (unsigned)(p_mb_mmap->base_addr & 0xffffffff),
+              (unsigned)(p_mb_mmap->length >> 32),
+              (unsigned)(p_mb_mmap->length & 0xffffffff),
+              (unsigned)p_mb_mmap->type,
+              p_mb_mmap->type == MULTIBOOT_MEMORY_AVAILABLE
+                ? "free"
+                : (p_mb_mmap->type == MULTIBOOT_MEMORY_ACPI_RECLAIMABLE
+                     ? "ACPI"
+                     : (p_mb_mmap->type == MULTIBOOT_MEMORY_NVS ? "ACPI NVS"
+                                                                : "used")),
+              (unsigned)p_mb_mmap->reserved);
+        } break;
+        case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
+          p_mb_tag_fb = (multiboot_tag_framebuffer_t*)mb_tag;
+          printf("framebuffer\n");
+          printf(" address 0x%8x%8x pitch %d\n",
+                 (unsigned)(p_mb_tag_fb->framebuffer_addr >> 32),
+                 (unsigned)(p_mb_tag_fb->framebuffer_addr & 0xffffffff),
+                 p_mb_tag_fb->framebuffer_pitch);
+          printf(" width %d height %d depth %d bpp\n",
+                 p_mb_tag_fb->framebuffer_width,
+                 p_mb_tag_fb->framebuffer_height,
+                 p_mb_tag_fb->framebuffer_bpp);
+          printf(" red channel:   at %d, %d bits\n",
+                 p_mb_tag_fb->framebuffer_red_field_position,
+                 p_mb_tag_fb->framebuffer_red_mask_size);
+          printf(" green channel: at %d, %d bits\n",
+                 p_mb_tag_fb->framebuffer_green_field_position,
+                 p_mb_tag_fb->framebuffer_green_mask_size);
+          printf(" blue channel:  at %d, %d bits\n",
+                 p_mb_tag_fb->framebuffer_blue_field_position,
+                 p_mb_tag_fb->framebuffer_blue_mask_size);
+          break;
+        }
+        case MULTIBOOT_TAG_TYPE_EFI64:
+          printf("EFI system table 0x%x\n",
+                 ((multiboot_tag_efi64_t*)mb_tag)->pointer);
+          break;
+        case MULTIBOOT_TAG_TYPE_EFI64_IH:
+          printf("EFI image handle 0x%x\n",
+                 ((multiboot_tag_efi64_t*)mb_tag)->pointer);
+          break;
+        case MULTIBOOT_TAG_TYPE_SMBIOS:
+          printf("SMBIOS table major %d minor %d\n",
+                 ((multiboot_tag_smbios_t*)mb_tag)->major,
+                 ((multiboot_tag_smbios_t*)mb_tag)->minor);
+          break;
+        case MULTIBOOT_TAG_TYPE_ACPI_OLD:
+          printf("ACPI table (1.0, old RSDP)");
+          dumpacpi((uint64_t)*(
+            (uint32_t*)&((multiboot_tag_old_acpi_t*)mb_tag)->rsdp[16]));
+          break;
+        case MULTIBOOT_TAG_TYPE_ACPI_NEW:
+          printf("ACPI table (2.0, new RSDP)");
+          dumpacpi(
+            *((uint64_t*)&((multiboot_tag_new_acpi_t*)mb_tag)->rsdp[24]));
+          break;
+        case MULTIBOOT_TAG_TYPE_EDID:
+          printf("EDID info\n");
+          printf(" manufacturer ID %02x%02x\n",
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[8],
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[9]);
+          printf(" EDID ID %02x%02x Version %d Rev %d\n",
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[10],
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[11],
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[18],
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[19]);
+          printf(" monitor type %02x size %d cm x %d cm\n",
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[20],
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[21],
+                 ((multiboot_tag_edid_t*)mb_tag)->edid[22]);
+          break;
+        case MULTIBOOT_TAG_TYPE_SMP:
+          printf("SMP supported\n");
+          printf(" %d core(s)\n", ((multiboot_tag_smp_t*)mb_tag)->numcores);
+          printf(" %d running\n", ((multiboot_tag_smp_t*)mb_tag)->running);
+          printf(" %02x bsp id\n", ((multiboot_tag_smp_t*)mb_tag)->bspid);
+          break;
+        case MULTIBOOT_TAG_TYPE_PARTUUID:
+          printf("Partition UUIDs\n");
+          printf(" boot ");
+          dumpuuid(((multiboot_tag_partuuid_t*)mb_tag)->bootuuid);
+          if (mb_tag->size >= 40) {
+            printf(" root ");
+            dumpuuid(((multiboot_tag_partuuid_t*)mb_tag)->rootuuid);
+          }
+          break;
+        default:
+          printf("---unknown MBI tag, this shouldn't happen with "
+                 "Simpleboot/Easyboot!---\n");
+          goto halt;
+      }
+    }
+    mb_tag = (multiboot_tag_t*)((uint8_t*)mb_tag + ((mb_tag->size + 7) & ~7));
+    printf("Total MBI size 0x%x %s\n",
+           (uintptr_t)mb_tag - addr,
+           ((uintptr_t)mb_tag - addr) == mbi_size ? "OK" : "ERR");
+
+    vidmode = *p_mb_tag_fb;
+    console_init();
+    printf("Hello, world!\n");
+
+  halt:
     for (;;)
       ;
   }

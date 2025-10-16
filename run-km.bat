@@ -15,7 +15,6 @@ ld.lld %LD_FLAGS% "obj\kernel.o" -o "boot\kernel.elf"
 
 if errorlevel 1 exit /b 1
 
-"thirdparty\simpleboot\simpleboot.exe" -vv -c -k "kernel.elf" "boot" "bin\disk.img"
 qemu-system-x86_64 -kernel "boot\kernel.elf" -display sdl -vga std -serial stdio
 
 endlocal
