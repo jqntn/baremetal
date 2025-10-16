@@ -91,7 +91,7 @@ extern "C"
                "subb $5, %%dl; movb %%bl, %%al; outb %%al, %%dx; 2:;"          \
                :                                                               \
                : "a"(c), "d"(0x3fd)                                            \
-               : "rbx", "rcx");
+               : "ebx", "ecx");
     va_start(args, fmt);
     arg = 0;
     while (*fmt) {
@@ -217,7 +217,7 @@ extern "C"
                  "subb $5, %%dl; movb %%bl, %%al; outb %%al, %%dx; 2:;"
                  :
                  : "a"(c), "d"(CONSOLE_SERIAL + 5)
-                 : "rbx", "rcx");
+                 : "ebx", "ecx");
 #endif
 #ifdef CONSOLE_FB
     psf2_t* font = (psf2_t*)font_psf;
