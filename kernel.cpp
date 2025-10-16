@@ -80,7 +80,7 @@ extern "C"
     va_list args;
     int arg, len, sign, i;
     unsigned int uarg;
-    char *p, tmpstr[19]{}, n;
+    char *p, tmpstr[19], n;
 #define PUTC(c)                                                                \
   asm volatile("xorl %%ebx, %%ebx; movb %0, %%bl;"                             \
                "movl $10000, %%ecx;"                                           \
@@ -357,7 +357,7 @@ extern "C"
     int64_t arg;
     uint16_t* u;
     int len, sign, i, l;
-    char *p, tmpstr[19]{}, n;
+    char *p, tmpstr[19], n;
 
     va_start(args, fmt);
     arg = 0;
