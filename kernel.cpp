@@ -199,7 +199,7 @@ extern "C"
                    "xorb %%al, %%al; subb $4, %%dl; inb %%dx, %%al"
                    :
                    : "a"(CONSOLE_SERIAL + 1)
-                   : "rdx");
+                   : "edx");
 #endif
 #ifdef CONSOLE_FB
     fb_x = fb_y = 4;
