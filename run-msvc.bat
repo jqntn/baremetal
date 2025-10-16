@@ -1,3 +1,5 @@
+::NOT WORKING ANYMORE, MSVC SUPPORT WAS DROPPED
+
 @echo off
 
 setlocal
