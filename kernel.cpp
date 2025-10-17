@@ -43,17 +43,17 @@ extern "C"
     return ret;
   }
 
-  void memcpy(void* dst, const void* src, unsigned int n)
+  void memcpy(void* dst, const void* src, unsigned long n)
   {
     asm volatile("repnz movsb" : : "D"(dst), "S"(src), "c"(n) :);
   }
 
-  void memset(void* dst, unsigned char c, unsigned int n)
+  void memset(void* dst, unsigned char c, unsigned long n)
   {
     asm volatile("repnz stosb" : : "D"(dst), "a"(c), "c"(n) :);
   }
 
-  int memcmp(const void* s1, const void* s2, unsigned int n)
+  int memcmp(const void* s1, const void* s2, unsigned long n)
   {
     int ret = 0;
     asm volatile("cld; repe cmpsb; xorl %%eax, %%eax; movb -1(%%edi), "
