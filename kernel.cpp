@@ -204,7 +204,7 @@ extern "C"
             memset((void*)(0xB8000 + 24 * 160), 0, 160);
           }
           *((uint16_t*)((uintptr_t)0xB8000 + vga_y * 160 + vga_x++ * 2)) =
-            0x0f00 | (c & 0xff);
+            0x0F00 | (c & 0xFF);
           break;
       }
 #endif
