@@ -1,4 +1,3 @@
-// TODO: fix __divdi3
 // TODO: rm cast from before va_arg
 
 extern "C"
@@ -48,12 +47,20 @@ extern "C"
 
   long long __divdi3(long long a, long long b)
   {
-    return a / b;
+    return b == 0               ? 0
+           : (a < 0) != (b < 0) ? -__divdi3(a < 0 ? -a : a, b < 0 ? -b : b)
+           : a < 0              ? -1 + __divdi3(-a, -b)
+           : a < b              ? 0
+                                : 1 + __divdi3(a - b, b);
   }
 
   long long __moddi3(long long a, long long b)
   {
-    return a % b;
+    return b == 0  ? 0
+           : a < 0 ? -__moddi3(-a, b < 0 ? -b : b)
+           : b < 0 ? __moddi3(a, -b)
+           : a < b ? a
+                   : __moddi3(a - b, b);
   }
 
 #define CONSOLE_SERIAL 0x3f8
