@@ -25,11 +25,15 @@ extern "C"
 
   long long __divdi3(long long a, long long b)
   {
-    return b == 0               ? 0
-           : (a < 0) != (b < 0) ? -__divdi3(a < 0 ? -a : a, b < 0 ? -b : b)
-           : a < 0              ? -1 + __divdi3(-a, -b)
-           : a < b              ? 0
-                                : 1 + __divdi3(a - b, b);
+    if (!b)
+      return 0;
+    long long q = 0;
+    int s = (a < 0) != (b < 0) ? -1 : 1;
+    a = a < 0 ? -a : a;
+    b = b < 0 ? -b : b;
+    for (; a >= b; a -= b)
+      q++;
+    return s * q;
   }
 
   long long __moddi3(long long a, long long b)
