@@ -38,11 +38,14 @@ extern "C"
 
   long long __moddi3(long long a, long long b)
   {
-    return b == 0  ? 0
-           : a < 0 ? -__moddi3(-a, b < 0 ? -b : b)
-           : b < 0 ? __moddi3(a, -b)
-           : a < b ? a
-                   : __moddi3(a - b, b);
+    if (!b)
+      return 0;
+    int s = a < 0 ? -1 : 1;
+    a = a < 0 ? -a : a;
+    b = b < 0 ? -b : b;
+    for (; a >= b; a -= b)
+      ;
+    return s * a;
   }
 
 #define CONSOLE_SERIAL 0x3f8
