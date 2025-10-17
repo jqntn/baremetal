@@ -42,7 +42,8 @@ extern "C"
 
   void memset(void* dst, unsigned char c, unsigned long n)
   {
-    asm volatile("repnz stosb" : : "D"(dst), "a"(c), "c"(n) :);
+    for (unsigned char* d = (unsigned char*)dst; n--;)
+      *d++ = c;
   }
 
   long long __divdi3(long long a, long long b)
