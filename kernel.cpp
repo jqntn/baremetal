@@ -1,4 +1,6 @@
-// TODO: rm cast from before va_arg
+// TODO: rm cast va_arg
+// TODO: rm/format asm
+// TODO: braces
 
 extern "C"
 {
