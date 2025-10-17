@@ -129,14 +129,14 @@ extern "C"
     uint8_t *glyph, *fb = (uint8_t*)vidmode.framebuffer_addr;
     if (fb)
       switch (c) {
-        case '\r':
+        case '\r': {
           fb_x = 4;
-          break;
-        case '\n':
+        } break;
+        case '\n': {
           fb_x = 4;
           fb_y += font->height;
-          break;
-        default:
+        } break;
+        default: {
           if (fb_x + font->width + 5 >= vidmode.framebuffer_width) {
             fb_x = 4;
             fb_y += font->height;
@@ -168,39 +168,39 @@ extern "C"
             for (x = 0; x < font->width && mask; x++, mask >>= 1) {
               switch (vidmode.framebuffer_bpp) {
                 case 15:
-                case 16:
+                case 16: {
                   *((uint16_t*)(fb + line)) =
                     ((int)*glyph) & mask ? 0xFFFF : fb_bg;
                   line += 2;
-                  break;
-                case 24:
+                } break;
+                case 24: {
                   *((uint32_t*)(fb + line)) =
                     ((int)*glyph) & mask ? 0xFFFFFF : fb_bg;
                   line += 3;
-                  break;
-                case 32:
+                } break;
+                case 32: {
                   *((uint32_t*)(fb + line)) =
                     ((int)*glyph) & mask ? 0xFFFFFFFF : fb_bg;
                   line += 4;
-                  break;
+                } break;
               }
             }
             *((uint32_t*)(fb + line)) = fb_bg;
           }
-          break;
+        } break;
       }
 #endif
 #ifdef CONSOLE_VGA
     if (!vidmode.framebuffer_addr)
       switch (c) {
-        case '\r':
+        case '\r': {
           vga_x = 0;
-          break;
-        case '\n':
+        } break;
+        case '\n': {
           vga_x = 0;
           vga_y++;
-          break;
-        default:
+        } break;
+        default: {
           if (vga_y >= 25) {
             memcpy((void*)0xB8000, (void*)(0xB8000 + 160), 160 * 24);
             vga_x = 0;
@@ -209,7 +209,7 @@ extern "C"
           }
           *((uint16_t*)((uintptr_t)0xB8000 + vga_y * 160 + vga_x++ * 2)) =
             (((vga_bg << 4) | vga_fg) << 8) | (unsigned char)c;
-          break;
+        } break;
       }
 #endif
   }
