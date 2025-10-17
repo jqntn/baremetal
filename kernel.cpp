@@ -1,5 +1,4 @@
 // TODO: rm cast va_arg
-// TODO: braces
 
 extern "C"
 {
@@ -105,7 +104,7 @@ extern "C"
     psf2_t* font = (psf2_t*)font_psf;
     uint32_t x, y, line, mask, offs, bpl = (font->width + 7) >> 3;
     uint8_t *glyph, *fb = (uint8_t*)vidmode.framebuffer_addr;
-    if (fb)
+    if (fb) {
       switch (c) {
         case '\r': {
           fb_x = 4;
@@ -127,12 +126,14 @@ extern "C"
             line = x * vidmode.framebuffer_pitch;
             for (y = x; y < vidmode.framebuffer_height; y++,
                 offs += vidmode.framebuffer_pitch,
-                line += vidmode.framebuffer_pitch)
+                line += vidmode.framebuffer_pitch) {
               memcpy(fb + offs, fb + line, vidmode.framebuffer_pitch);
+            }
             for (y = fb_y, offs = fb_y * vidmode.framebuffer_pitch;
                  y < vidmode.framebuffer_height;
-                 y++, offs += vidmode.framebuffer_pitch)
+                 y++, offs += vidmode.framebuffer_pitch) {
               memset(fb + offs, 0, vidmode.framebuffer_pitch);
+            }
           }
           glyph = font_psf + font->headersize +
                   (c > 0 && c < font->numglyph ? c : 0) * font->bytesperglyph;
@@ -167,9 +168,10 @@ extern "C"
           }
         } break;
       }
+    }
 #endif
 #ifdef CONSOLE_VGA
-    if (!vidmode.framebuffer_addr)
+    if (!vidmode.framebuffer_addr) {
       switch (c) {
         case '\r': {
           vga_x = 0;
@@ -189,6 +191,7 @@ extern "C"
             (((vga_bg << 4) | vga_fg) << 8) | (unsigned char)c;
         } break;
       }
+    }
 #endif
   }
 
@@ -216,8 +219,9 @@ extern "C"
     while (*fmt) {
       if (*fmt == '%') {
         fmt++;
-        if (*fmt == '%')
+        if (*fmt == '%') {
           goto put;
+        }
         len = l = 0;
         while (*fmt >= '0' && *fmt <= '9') {
           len *= 10;
@@ -234,10 +238,11 @@ extern "C"
           fmt++;
           continue;
         } else if (*fmt == 'd') {
-          if (!l)
+          if (!l) {
             arg = (int32_t)va_arg(args, int32_t);
-          else
+          } else {
             arg = va_arg(args, int64_t);
+          }
           sign = 0;
           if ((int)arg < 0) {
             arg = -arg;
@@ -249,52 +254,62 @@ extern "C"
             tmpstr[--i] = '0' + (arg % 10);
             arg /= 10;
           } while (arg != 0 && i > 0);
-          if (sign)
+          if (sign) {
             tmpstr[--i] = '-';
+          }
           if (len > 0 && len < 18) {
-            while (i > 18 - len)
+            while (i > 18 - len) {
               tmpstr[--i] = ' ';
+            }
           }
           p = &tmpstr[i];
           goto putstring;
         } else if (*fmt == 'x' || *fmt == 'p') {
-          if (*fmt == 'x' && !l)
+          if (*fmt == 'x' && !l) {
             arg = (int32_t)va_arg(args, int32_t);
-          else
+          } else {
             arg = va_arg(args, int64_t);
+          }
           i = 16;
           tmpstr[i] = 0;
-          if (*fmt == 'p')
+          if (*fmt == 'p') {
             len = 16;
+          }
           do {
             n = arg & 0xF;
             tmpstr[--i] = n + (n > 9 ? 0x37 : 0x30);
             arg >>= 4;
           } while (arg != 0 && i > 0);
           if (len > 0 && len <= 16) {
-            while (i > 16 - len)
+            while (i > 16 - len) {
               tmpstr[--i] = '0';
+            }
           }
           p = &tmpstr[i];
           goto putstring;
         } else if (*fmt == 's') {
           p = va_arg(args, char*);
         putstring:
-          if (p == (void*)0)
+          if (p == (void*)0) {
             p = (char*)"(null)";
-          while (*p)
+          }
+          while (*p) {
             console_putc(*p++);
+          }
         }
         if (*fmt == 'S') {
           u = va_arg(args, uint16_t*);
-          if (u == (void*)0)
+          if (u == (void*)0) {
             u = (uint16_t*)L"(null)";
-          while (*u)
+          }
+          while (*u) {
             console_putc(*u++);
+          }
         } else if (*fmt == 'D') {
           arg = va_arg(args, int64_t);
-          if (len < 1)
+          if (len < 1) {
             len = 1;
+          }
           do {
             for (i = 28; i >= 0; i -= 4) {
               n = (arg >> i) & 15;
@@ -314,8 +329,9 @@ extern "C"
               console_putc(' ');
             }
             console_putc(' ');
-            for (i = 0; i < 16; i++)
+            for (i = 0; i < 16; i++) {
               console_putc(ptr[i] < 32 || ptr[i] >= 127 ? '.' : ptr[i]);
+            }
             console_putc('\r');
             console_putc('\n');
             arg += 16;
@@ -398,7 +414,7 @@ extern "C"
                  p_mb_mmap =
                    (multiboot_mmap_entry_t*)((uintptr_t)p_mb_mmap +
                                              ((multiboot_tag_mmap_t*)mb_tag)
-                                               ->entry_size))
+                                               ->entry_size)) {
               printf(
                 " base_addr = 0x%8x%8x,"
                 " length = 0x%8x%8x, type = 0x%x %s, res = 0x%x\n",
@@ -414,6 +430,7 @@ extern "C"
                        : (p_mb_mmap->type == MULTIBOOT_MEMORY_NVS ? "ACPI NVS"
                                                                   : "used")),
                 p_mb_mmap->reserved);
+            }
           } break;
           case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
             p_mb_tag_fb = (multiboot_tag_framebuffer_t*)mb_tag;
