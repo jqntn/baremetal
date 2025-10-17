@@ -372,14 +372,16 @@ extern "C"
   void _start(uint32_t magic, uintptr_t addr)
   {
     if (magic == MULTIBOOT2_BOOTLOADER_MAGIC) {
+      printf("\n\n");
+
       if (addr & 7) {
-        printf("Unaligned MBI: 0x%x\n", addr);
+        printf("unaligned MBI: 0x%x\n", addr);
         goto halt;
       }
 
       uint32_t mbi_size;
       mbi_size = ((multiboot_info_t*)addr)->total_size;
-      printf("\nAnnounced MBI size 0x%x\n", mbi_size);
+      printf("announced MBI size 0x%x\n", mbi_size);
 
       multiboot_mmap_entry_t* p_mb_mmap;
       multiboot_tag_framebuffer_t* p_mb_tag_fb;
@@ -389,24 +391,23 @@ extern "C"
            mb_tag < mb_tag_last && mb_tag->type != MULTIBOOT_TAG_TYPE_END;
            mb_tag =
              (multiboot_tag_t*)((uint8_t*)mb_tag + ((mb_tag->size + 7) & ~7))) {
-        printf("Tag 0x%x, Size 0x%x\n", mb_tag->type, mb_tag->size);
         switch (mb_tag->type) {
           case MULTIBOOT_TAG_TYPE_CMDLINE: {
-            printf("Command line = %s\n",
+            printf("  command line = %s\n",
                    ((multiboot_tag_cmdline_t*)mb_tag)->string);
           } break;
           case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME: {
-            printf("Boot loader name = %s\n",
+            printf("  boot loader name = %s\n",
                    ((multiboot_tag_loader_t*)mb_tag)->string);
           } break;
           case MULTIBOOT_TAG_TYPE_MODULE: {
-            printf("Module at 0x%x-0x%x. Command line %s\n",
+            printf("  module at 0x%x-0x%x. command line %s\n",
                    ((multiboot_tag_module_t*)mb_tag)->mod_start,
                    ((multiboot_tag_module_t*)mb_tag)->mod_end,
                    ((multiboot_tag_module_t*)mb_tag)->string);
           } break;
           case MULTIBOOT_TAG_TYPE_MMAP: {
-            printf("mmap\n");
+            printf("  mmap\n");
             for (p_mb_mmap = ((multiboot_tag_mmap_t*)mb_tag)->entries;
                  (uint8_t*)p_mb_mmap < (uint8_t*)mb_tag + mb_tag->size;
                  p_mb_mmap =
@@ -414,8 +415,8 @@ extern "C"
                                              ((multiboot_tag_mmap_t*)mb_tag)
                                                ->entry_size)) {
               printf(
-                " base_addr = 0x%8x%8x,"
-                " length = 0x%8x%8x, type = 0x%x %s, res = 0x%x\n",
+                "    base_addr = 0x%8x%8x, "
+                "length = 0x%8x%8x, type = 0x%x %s, res = 0x%x\n",
                 (uint32_t)(p_mb_mmap->base_addr >> 32),
                 (uint32_t)(p_mb_mmap->base_addr & 0xFFFFFFFF),
                 (uint32_t)(p_mb_mmap->length >> 32),
@@ -432,89 +433,90 @@ extern "C"
           } break;
           case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
             p_mb_tag_fb = (multiboot_tag_framebuffer_t*)mb_tag;
-            printf("framebuffer\n");
-            printf(" address 0x%8x%8x pitch %d\n",
+            printf("  framebuffer\n");
+            printf("    address 0x%8x%8x pitch %d\n",
                    (uint32_t)(p_mb_tag_fb->framebuffer_addr >> 32),
                    (uint32_t)(p_mb_tag_fb->framebuffer_addr & 0xFFFFFFFF),
                    p_mb_tag_fb->framebuffer_pitch);
-            printf(" width %d height %d depth %d bpp\n",
+            printf("    width %d height %d depth %d bpp\n",
                    p_mb_tag_fb->framebuffer_width,
                    p_mb_tag_fb->framebuffer_height,
                    p_mb_tag_fb->framebuffer_bpp);
-            printf(" red channel:   at %d, %d bits\n",
+            printf("    red channel:   at %d, %d bits\n",
                    p_mb_tag_fb->framebuffer_red_field_position,
                    p_mb_tag_fb->framebuffer_red_mask_size);
-            printf(" green channel: at %d, %d bits\n",
+            printf("    green channel: at %d, %d bits\n",
                    p_mb_tag_fb->framebuffer_green_field_position,
                    p_mb_tag_fb->framebuffer_green_mask_size);
-            printf(" blue channel:  at %d, %d bits\n",
+            printf("    blue channel:  at %d, %d bits\n",
                    p_mb_tag_fb->framebuffer_blue_field_position,
                    p_mb_tag_fb->framebuffer_blue_mask_size);
           } break;
           case MULTIBOOT_TAG_TYPE_EFI64: {
-            printf("EFI system table 0x%x\n",
+            printf("  EFI system table 0x%x\n",
                    ((multiboot_tag_efi64_t*)mb_tag)->pointer);
           } break;
           case MULTIBOOT_TAG_TYPE_EFI64_IH: {
-            printf("EFI image handle 0x%x\n",
+            printf("  EFI image handle 0x%x\n",
                    ((multiboot_tag_efi64_t*)mb_tag)->pointer);
           } break;
           case MULTIBOOT_TAG_TYPE_SMBIOS: {
-            printf("SMBIOS table major %d minor %d\n",
+            printf("  SMBIOS table major %d minor %d\n",
                    ((multiboot_tag_smbios_t*)mb_tag)->major,
                    ((multiboot_tag_smbios_t*)mb_tag)->minor);
           } break;
           case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
-            printf("ACPI table (1.0, old RSDP)\n");
+            printf("  ACPI table (1.0, old RSDP)\n");
           } break;
           case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
-            printf("ACPI table (2.0, new RSDP)\n");
+            printf("  ACPI table (2.0, new RSDP)\n");
           } break;
           case MULTIBOOT_TAG_TYPE_EDID: {
-            printf("EDID info\n");
-            printf(" manufacturer ID %02x%02x\n",
+            printf("  EDID info\n");
+            printf("    manufacturer ID %02x%02x\n",
                    ((multiboot_tag_edid_t*)mb_tag)->edid[8],
                    ((multiboot_tag_edid_t*)mb_tag)->edid[9]);
-            printf(" EDID ID %02x%02x Version %d Rev %d\n",
+            printf("    EDID ID %02x%02x version %d rev %d\n",
                    ((multiboot_tag_edid_t*)mb_tag)->edid[10],
                    ((multiboot_tag_edid_t*)mb_tag)->edid[11],
                    ((multiboot_tag_edid_t*)mb_tag)->edid[18],
                    ((multiboot_tag_edid_t*)mb_tag)->edid[19]);
-            printf(" monitor type %02x size %d cm x %d cm\n",
+            printf("    monitor type %02x size %d cm x %d cm\n",
                    ((multiboot_tag_edid_t*)mb_tag)->edid[20],
                    ((multiboot_tag_edid_t*)mb_tag)->edid[21],
                    ((multiboot_tag_edid_t*)mb_tag)->edid[22]);
           } break;
           case MULTIBOOT_TAG_TYPE_SMP: {
-            printf("SMP supported\n");
-            printf(" %d core(s)\n", ((multiboot_tag_smp_t*)mb_tag)->numcores);
-            printf(" %d running\n", ((multiboot_tag_smp_t*)mb_tag)->running);
-            printf(" %02x bsp id\n", ((multiboot_tag_smp_t*)mb_tag)->bspid);
+            printf("  SMP supported\n");
+            printf("    %d core(s)\n",
+                   ((multiboot_tag_smp_t*)mb_tag)->numcores);
+            printf("    %d running\n", ((multiboot_tag_smp_t*)mb_tag)->running);
+            printf("    %02x bsp id\n", ((multiboot_tag_smp_t*)mb_tag)->bspid);
           } break;
           case MULTIBOOT_TAG_TYPE_PARTUUID: {
-            printf("Partition UUIDs\n");
-            printf(" boot ");
+            printf("  partition UUIDs\n");
+            printf("    boot ");
             dumpuuid(((multiboot_tag_partuuid_t*)mb_tag)->bootuuid);
             if (mb_tag->size >= 40) {
-              printf(" root ");
+              printf("    root ");
               dumpuuid(((multiboot_tag_partuuid_t*)mb_tag)->rootuuid);
             }
           } break;
           default: {
-            printf("---unknown MBI tag, this shouldn't happen with "
+            printf("  ---unknown MBI tag, this shouldn't happen with "
                    "Simpleboot/Easyboot!---\n");
             goto halt;
           } break;
         }
       }
       mb_tag = (multiboot_tag_t*)((uint8_t*)mb_tag + ((mb_tag->size + 7) & ~7));
-      printf("Total MBI size 0x%x %s\n",
+      printf("total MBI size 0x%x %s\n",
              (uintptr_t)mb_tag - addr,
              ((uintptr_t)mb_tag - addr) == mbi_size ? "OK" : "ERR");
 
+      printf("\n\n");
+
       vidmode = *p_mb_tag_fb;
-    } else {
-      printf("Invalid MB2 magic number: 0x%x\n", magic);
     }
 
     console_init();
