@@ -61,7 +61,6 @@ extern "C"
 #define CONSOLE_VGA
 
   multiboot_tag_framebuffer_t vidmode;
-
 #ifdef CONSOLE_FB
 #include "psf.h"
   uint32_t fb_x, fb_y;
