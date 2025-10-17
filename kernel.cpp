@@ -6,7 +6,6 @@ extern "C"
 #include <stdarg.h>
 #include <stdint.h>
 
-#include "thirdparty/simpleboot/loader.h"
 #include "thirdparty/simpleboot/simpleboot.h"
 
   void memcpy(void* dst, const void* src, unsigned long n)
@@ -49,6 +48,20 @@ extern "C"
 #define CONSOLE_SERIAL 0x3f8
 #define CONSOLE_FB
 #define CONSOLE_VGA
+
+#define FB_COLOR(r, g, b)                                                      \
+  (((vidmode.framebuffer_red_mask_size > 8                                     \
+       ? (r) << (vidmode.framebuffer_red_mask_size - 8)                        \
+       : (r) >> (8 - vidmode.framebuffer_red_mask_size))                       \
+    << vidmode.framebuffer_red_field_position) |                               \
+   ((vidmode.framebuffer_green_mask_size > 8                                   \
+       ? (g) << (vidmode.framebuffer_green_mask_size - 8)                      \
+       : (g) >> (8 - vidmode.framebuffer_green_mask_size))                     \
+    << vidmode.framebuffer_green_field_position) |                             \
+   ((vidmode.framebuffer_blue_mask_size > 8                                    \
+       ? (b) << (vidmode.framebuffer_blue_mask_size - 8)                       \
+       : (b) >> (8 - vidmode.framebuffer_blue_mask_size))                      \
+    << vidmode.framebuffer_blue_field_position))
 
   multiboot_tag_framebuffer_t vidmode;
 #ifdef CONSOLE_FB
