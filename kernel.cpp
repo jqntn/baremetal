@@ -348,18 +348,6 @@ extern "C"
     va_end(args);
   }
 
-  void vgat_hello_world()
-  {
-    volatile unsigned short* vgat = (unsigned short*)0xB8000;
-
-    for (int i = 0; i < 80 * 25; ++i)
-      vgat[i] = (0x0F << 8) | ' ';
-
-    const char* msg = "Hello, world!";
-    for (int i = 0; msg[i]; ++i)
-      vgat[i] = (0x0F << 8) | msg[i];
-  }
-
   /**
    * Print a binary UUID in human readable form
    */
