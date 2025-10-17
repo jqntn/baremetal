@@ -85,10 +85,13 @@ extern "C"
   {
 #ifdef CONSOLE_SERIAL
     asm volatile("movb    %0, %%bl;"
+                 "movl    $10000, %%ecx;"
                  "1:"
                  "inb     %%dx, %%al;"
                  "cmpb    $0xff, %%al;"
                  "je      2f;"
+                 "dec     %%ecx;"
+                 "jz      2f;"
                  "testb   $0x20, %%al;"
                  "jz      1b;"
                  "subb    $5, %%dl;"
@@ -97,7 +100,7 @@ extern "C"
                  "2:"
                  :
                  : "r"(c), "d"(CONSOLE_SERIAL + 5)
-                 :);
+                 : "al", "bl", "ecx");
 #endif
 #ifdef CONSOLE_FB
     psf2_t* font = (psf2_t*)font_psf;
