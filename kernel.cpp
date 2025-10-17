@@ -53,17 +53,6 @@ extern "C"
     asm volatile("repnz stosb" : : "D"(dst), "a"(c), "c"(n) :);
   }
 
-  int memcmp(const void* s1, const void* s2, unsigned long n)
-  {
-    int ret = 0;
-    asm volatile("cld; repe cmpsb; xorl %%eax, %%eax; movb -1(%%edi), "
-                 "%%al; subb -1(%%esi), %%al;"
-                 : "=a"(ret)
-                 : "D"(s1), "S"(s2), "c"(n)
-                 :);
-    return ret;
-  }
-
   long long __divdi3(long long a, long long b)
   {
     return a / b;
