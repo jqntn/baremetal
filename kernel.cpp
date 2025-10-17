@@ -84,16 +84,20 @@ extern "C"
   void console_putc(uint8_t c)
   {
 #ifdef CONSOLE_SERIAL
-    asm volatile("xorl %%ebx, %%ebx; movb %0, %%bl;"
-                 "movl $10000, %%ecx;"
-                 "1: inb %%dx, %%al; pause;"
-                 "cmpb $0xff, %%al; je 2f;"
-                 "dec %%ecx; jz 2f;"
-                 "andb $0x20, %%al; jz 1b;"
-                 "subb $5, %%dl; movb %%bl, %%al; outb %%al, %%dx; 2:;"
+    asm volatile("movb    %0, %%bl;"
+                 "1:"
+                 "inb     %%dx, %%al;"
+                 "cmpb    $0xff, %%al;"
+                 "je      2f;"
+                 "testb   $0x20, %%al;"
+                 "jz      1b;"
+                 "subb    $5, %%dl;"
+                 "movb    %%bl, %%al;"
+                 "outb    %%al, %%dx;"
+                 "2:"
                  :
-                 : "a"(c), "d"(CONSOLE_SERIAL + 5)
-                 : "ebx", "ecx");
+                 : "r"(c), "d"(CONSOLE_SERIAL + 5)
+                 :);
 #endif
 #ifdef CONSOLE_FB
     psf2_t* font = (psf2_t*)font_psf;
