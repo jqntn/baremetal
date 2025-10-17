@@ -186,7 +186,7 @@ extern "C"
 #endif
   }
 
-  /**
+  /*
    * Display (extremely minimal) formated message on console
    * %c: an ASCII character
    * %d: a decimal number
@@ -324,7 +324,7 @@ extern "C"
     va_end(args);
   }
 
-  /**
+  /*
    * Print a binary UUID in human readable form
    */
   void dumpuuid(const uint8_t* uuid)
