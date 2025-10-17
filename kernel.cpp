@@ -76,6 +76,8 @@ extern "C"
 #endif
 #ifdef CONSOLE_VGA
   uint16_t vga_x, vga_y;
+  uint16_t vga_bg;
+  uint16_t vga_fg;
 #endif
 
   void console_init()
@@ -100,6 +102,8 @@ extern "C"
 #endif
 #ifdef CONSOLE_VGA
     vga_x = vga_y = 0;
+    vga_bg = 0x1;
+    vga_fg = 0xF;
     if (!vidmode.framebuffer_addr)
       memset((void*)0xB8000, 0, 160 * 25);
 #endif
@@ -204,7 +208,7 @@ extern "C"
             memset((void*)(0xB8000 + 24 * 160), 0, 160);
           }
           *((uint16_t*)((uintptr_t)0xB8000 + vga_y * 160 + vga_x++ * 2)) =
-            0x0F00 | (unsigned char)c;
+            (((vga_bg << 4) | vga_fg) << 8) | (unsigned char)c;
           break;
       }
 #endif
