@@ -52,7 +52,7 @@ extern "C"
 
   multiboot_tag_framebuffer_t vidmode;
 #ifdef CONSOLE_FB
-#include "psf.h"
+#include "thirdparty/simpleboot/psf.h"
   uint32_t fb_x, fb_y;
   uint32_t fb_bg;
 #endif
@@ -133,7 +133,7 @@ extern "C"
               memset(fb + offs, 0, vidmode.framebuffer_pitch);
             }
           }
-          glyph = font_psf + font->headersize +
+          glyph = (uint8_t*)font_psf + font->headersize +
                   (c > 0 && c < font->numglyph ? c : 0) * font->bytesperglyph;
           offs = fb_y * vidmode.framebuffer_pitch +
                  fb_x * ((vidmode.framebuffer_bpp + 7) >> 3);
