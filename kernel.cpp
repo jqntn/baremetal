@@ -75,20 +75,6 @@ extern "C"
 
   void console_init()
   {
-#ifdef CONSOLE_SERIAL
-    asm volatile("movl %0, %%edx;"
-                 "xorb %%al, %%al; outb %%al, %%dx;"
-                 "movb $0x80, %%al; addb $2, %%dl; outb %%al, %%dx;"
-                 "movb $1, %%al; subb $3, %%dl; outb %%al, %%dx;"
-                 "xorb %%al, %%al; incb %%dl; outb %%al, %%dx;"
-                 "incb %%dl; outb %%al, %%dx;"
-                 "movb $0x43, %%al; incb %%dl; outb %%al, %%dx;"
-                 "movb $0x8, %%al; incb %%dl; outb %%al, %%dx;"
-                 "xorb %%al, %%al; subb $4, %%dl; inb %%dx, %%al"
-                 :
-                 : "a"(CONSOLE_SERIAL + 1)
-                 : "edx");
-#endif
 #ifdef CONSOLE_FB
     fb_x = fb_y = 4;
     fb_bg = FB_COLOR(0, 0, 255);
