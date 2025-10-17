@@ -380,7 +380,7 @@ extern "C"
   void _start(uint32_t magic, uintptr_t addr)
   {
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
-      printf("Invalid magic number: 0x%x\n", (unsigned)magic);
+      printf("Invalid magic number: 0x%x\n", magic);
       goto halt;
     }
     if (addr & 7) {
@@ -388,7 +388,7 @@ extern "C"
       goto halt;
     }
 
-    unsigned int mbi_size;
+    uint32_t mbi_size;
     mbi_size = ((multiboot_info_t*)addr)->total_size;
     printf("\nAnnounced MBI size 0x%x\n", mbi_size);
 
@@ -427,25 +427,25 @@ extern "C"
             printf(
               " base_addr = 0x%8x%8x,"
               " length = 0x%8x%8x, type = 0x%x %s, res = 0x%x\n",
-              (unsigned)(p_mb_mmap->base_addr >> 32),
-              (unsigned)(p_mb_mmap->base_addr & 0xFFFFFFFF),
-              (unsigned)(p_mb_mmap->length >> 32),
-              (unsigned)(p_mb_mmap->length & 0xFFFFFFFF),
-              (unsigned)p_mb_mmap->type,
+              (uint32_t)(p_mb_mmap->base_addr >> 32),
+              (uint32_t)(p_mb_mmap->base_addr & 0xFFFFFFFF),
+              (uint32_t)(p_mb_mmap->length >> 32),
+              (uint32_t)(p_mb_mmap->length & 0xFFFFFFFF),
+              p_mb_mmap->type,
               p_mb_mmap->type == MULTIBOOT_MEMORY_AVAILABLE
                 ? "free"
                 : (p_mb_mmap->type == MULTIBOOT_MEMORY_ACPI_RECLAIMABLE
                      ? "ACPI"
                      : (p_mb_mmap->type == MULTIBOOT_MEMORY_NVS ? "ACPI NVS"
                                                                 : "used")),
-              (unsigned)p_mb_mmap->reserved);
+              p_mb_mmap->reserved);
         } break;
         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
           p_mb_tag_fb = (multiboot_tag_framebuffer_t*)mb_tag;
           printf("framebuffer\n");
           printf(" address 0x%8x%8x pitch %d\n",
-                 (unsigned)(p_mb_tag_fb->framebuffer_addr >> 32),
-                 (unsigned)(p_mb_tag_fb->framebuffer_addr & 0xFFFFFFFF),
+                 (uint32_t)(p_mb_tag_fb->framebuffer_addr >> 32),
+                 (uint32_t)(p_mb_tag_fb->framebuffer_addr & 0xFFFFFFFF),
                  p_mb_tag_fb->framebuffer_pitch);
           printf(" width %d height %d depth %d bpp\n",
                  p_mb_tag_fb->framebuffer_width,
