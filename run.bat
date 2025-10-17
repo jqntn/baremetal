@@ -2,7 +2,7 @@
 
 setlocal
 
-set CLANG_FLAGS=-c --target=x86_64-elf -ffreestanding -fno-exceptions -fno-rtti -fno-stack-protector -fno-strict-aliasing -fno-builtin
+set CLANG_FLAGS=-c -Os --target=x86_64-elf -ffreestanding -fno-exceptions -fno-unwind-tables -fno-rtti -fno-stack-protector -fno-strict-aliasing -fno-builtin -fno-common
 set LD_FLAGS=-m elf_x86_64 --entry=_start --Ttext=0x100000 --image-base=0x100000 --omagic --nostdlib --static
 
 if not exist bin md bin
