@@ -1,4 +1,6 @@
 // TODO: 32bit compat
+// TODO: fix __divdi3
+// TODO: rm cast from before va_arg
 
 extern "C"
 {
@@ -41,17 +43,17 @@ extern "C"
     return ret;
   }
 
-  void memcpy(void* dst, const void* src, uint32_t n)
+  void memcpy(void* dst, const void* src, unsigned int n)
   {
     asm volatile("repnz movsb" : : "D"(dst), "S"(src), "c"(n) :);
   }
 
-  void memset(void* dst, uint8_t c, uint32_t n)
+  void memset(void* dst, unsigned char c, unsigned int n)
   {
     asm volatile("repnz stosb" : : "D"(dst), "a"(c), "c"(n) :);
   }
 
-  int memcmp(const void* s1, const void* s2, uint32_t n)
+  int memcmp(const void* s1, const void* s2, unsigned int n)
   {
     int ret = 0;
     asm volatile("cld; repe cmpsb; xorl %%eax, %%eax; movb -1(%%edi), "
@@ -294,7 +296,7 @@ extern "C"
           if (*fmt == 'p')
             len = 16;
           do {
-            n = arg & 0xf;
+            n = arg & 0xF;
             tmpstr[--i] = n + (n > 9 ? 0x37 : 0x30);
             arg >>= 4;
           } while (arg != 0 && i > 0);
