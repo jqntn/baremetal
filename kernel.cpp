@@ -1,5 +1,3 @@
-// TODO: rm cast va_arg
-
 extern "C"
 {
   __attribute__((section(".multiboot"), aligned(4), used))
@@ -239,7 +237,7 @@ extern "C"
           continue;
         } else if (*fmt == 'd') {
           if (!l) {
-            arg = (int32_t)va_arg(args, int32_t);
+            arg = va_arg(args, int32_t);
           } else {
             arg = va_arg(args, int64_t);
           }
@@ -266,7 +264,7 @@ extern "C"
           goto putstring;
         } else if (*fmt == 'x' || *fmt == 'p') {
           if (*fmt == 'x' && !l) {
-            arg = (int32_t)va_arg(args, int32_t);
+            arg = va_arg(args, int32_t);
           } else {
             arg = va_arg(args, int64_t);
           }
