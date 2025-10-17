@@ -1,17 +1,10 @@
-// TODO: 32bit compat
 // TODO: fix __divdi3
 // TODO: rm cast from before va_arg
 
 extern "C"
 {
-#ifndef _MSC_VER
-  asm(".section .multiboot;"
-      ".align 4;"
-      "multiboot_header:;"
-      ".long 0x1BADB002;"
-      ".long 0;"
-      ".long -(0x1BADB002+0);");
-#endif
+  __attribute__((section(".multiboot"), aligned(4), used))
+  const int multiboot_header[] = { 0x1BADB002, 0, -(0x1BADB002 + 0) };
 
 #include <stdarg.h>
 #include <stdint.h>
