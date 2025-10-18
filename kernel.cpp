@@ -301,7 +301,7 @@ extern "C"
         } else if (*fmt == 's') {
           char_ptr = va_arg(args, char*);
         putstring:
-          if (char_ptr == (void*)0) {
+          if (!char_ptr) {
             char_ptr = (char*)"(null)";
           }
           while (*char_ptr) {
@@ -310,7 +310,7 @@ extern "C"
         }
         if (*fmt == 'S') {
           wchar_ptr = va_arg(args, uint16_t*);
-          if (wchar_ptr == (void*)0) {
+          if (!wchar_ptr) {
             wchar_ptr = (uint16_t*)L"(null)";
           }
           while (*wchar_ptr) {
