@@ -11,7 +11,7 @@ if not exist boot md boot
 
 clang++ %CLANG_FLAGS% "kernel.cpp" -o "obj\kernel.o"
 
-ld.lld %LD_FLAGS% "obj\kernel.o" -o "boot\kernel.elf"
+ld.lld %LD_FLAGS% "obj\*.o" -o "boot\kernel.elf"
 
 if errorlevel 1 exit /b 1
 
