@@ -516,8 +516,7 @@ extern "C"
             }
           } break;
           default: {
-            printf("  ---unknown MBI tag, this shouldn't happen with "
-                   "Simpleboot/Easyboot!---\n");
+            printf("  /!\\ UNKNOWN MBI TAG /!\\\n");
             goto halt;
           } break;
         }
