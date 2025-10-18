@@ -245,7 +245,7 @@ extern "C"
         }
         if (*fmt == 'c') {
           arg = va_arg(args, int);
-          console_putc((uint8_t)arg);
+          console_putc(arg);
           fmt++;
           continue;
         } else if (*fmt == 'd') {
@@ -329,7 +329,7 @@ extern "C"
             }
             console_putc(':');
             console_putc(' ');
-            ptr = (uint8_t*)(uintptr_t)arg;
+            ptr = (uint8_t*)arg;
             for (i = 0; i < 16; i++) {
               n = (ptr[i] >> 4) & 15;
               n += (n > 9 ? 0x37 : 0x30);
