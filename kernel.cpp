@@ -219,11 +219,11 @@ extern "C"
   void printf(const char* fmt, ...)
   {
     va_list args;
-    uint8_t* ptr;
     int64_t arg;
-    uint16_t* u;
-    int len, sign, i, l;
-    char *p, tmpstr[19], n;
+    uint8_t* byte_ptr;
+    uint16_t* wchar_ptr;
+    char *char_ptr, tmp_str[19], hex_digit;
+    int len, sign, idx, long_flag;
 
     va_start(args, fmt);
     arg = 0;
@@ -233,14 +233,14 @@ extern "C"
         if (*fmt == '%') {
           goto put;
         }
-        len = l = 0;
+        len = long_flag = 0;
         while (*fmt >= '0' && *fmt <= '9') {
           len *= 10;
           len += *fmt - '0';
           fmt++;
         }
         if (*fmt == 'l') {
-          l++;
+          long_flag++;
           fmt++;
         }
         if (*fmt == 'c') {
@@ -249,7 +249,7 @@ extern "C"
           fmt++;
           continue;
         } else if (*fmt == 'd') {
-          if (!l) {
+          if (!long_flag) {
             arg = va_arg(args, int32_t);
           } else {
             arg = va_arg(args, int64_t);
@@ -259,62 +259,62 @@ extern "C"
             arg = -arg;
             sign++;
           }
-          i = 18;
-          tmpstr[i] = 0;
+          idx = 18;
+          tmp_str[idx] = 0;
           do {
-            tmpstr[--i] = '0' + (arg % 10);
+            tmp_str[--idx] = '0' + (arg % 10);
             arg /= 10;
-          } while (arg != 0 && i > 0);
+          } while (arg != 0 && idx > 0);
           if (sign) {
-            tmpstr[--i] = '-';
+            tmp_str[--idx] = '-';
           }
           if (len > 0 && len < 18) {
-            while (i > 18 - len) {
-              tmpstr[--i] = ' ';
+            while (idx > 18 - len) {
+              tmp_str[--idx] = ' ';
             }
           }
-          p = &tmpstr[i];
+          char_ptr = &tmp_str[idx];
           goto putstring;
         } else if (*fmt == 'x' || *fmt == 'p') {
-          if (*fmt == 'x' && !l) {
+          if (*fmt == 'x' && !long_flag) {
             arg = va_arg(args, int32_t);
           } else {
             arg = va_arg(args, int64_t);
           }
-          i = 16;
-          tmpstr[i] = 0;
+          idx = 16;
+          tmp_str[idx] = 0;
           if (*fmt == 'p') {
             len = 16;
           }
           do {
-            n = arg & 0xF;
-            tmpstr[--i] = n + (n > 9 ? 0x37 : 0x30);
+            hex_digit = arg & 0xF;
+            tmp_str[--idx] = hex_digit + (hex_digit > 9 ? 0x37 : 0x30);
             arg >>= 4;
-          } while (arg != 0 && i > 0);
+          } while (arg != 0 && idx > 0);
           if (len > 0 && len <= 16) {
-            while (i > 16 - len) {
-              tmpstr[--i] = '0';
+            while (idx > 16 - len) {
+              tmp_str[--idx] = '0';
             }
           }
-          p = &tmpstr[i];
+          char_ptr = &tmp_str[idx];
           goto putstring;
         } else if (*fmt == 's') {
-          p = va_arg(args, char*);
+          char_ptr = va_arg(args, char*);
         putstring:
-          if (p == (void*)0) {
-            p = (char*)"(null)";
+          if (char_ptr == (void*)0) {
+            char_ptr = (char*)"(null)";
           }
-          while (*p) {
-            console_putc(*p++);
+          while (*char_ptr) {
+            console_putc(*char_ptr++);
           }
         }
         if (*fmt == 'S') {
-          u = va_arg(args, uint16_t*);
-          if (u == (void*)0) {
-            u = (uint16_t*)L"(null)";
+          wchar_ptr = va_arg(args, uint16_t*);
+          if (wchar_ptr == (void*)0) {
+            wchar_ptr = (uint16_t*)L"(null)";
           }
-          while (*u) {
-            console_putc(*u++);
+          while (*wchar_ptr) {
+            console_putc(*wchar_ptr++);
           }
         } else if (*fmt == 'D') {
           arg = va_arg(args, int64_t);
@@ -322,26 +322,28 @@ extern "C"
             len = 1;
           }
           do {
-            for (i = 28; i >= 0; i -= 4) {
-              n = (arg >> i) & 15;
-              n += (n > 9 ? 0x37 : 0x30);
-              console_putc(n);
+            for (idx = 28; idx >= 0; idx -= 4) {
+              hex_digit = (arg >> idx) & 15;
+              hex_digit += (hex_digit > 9 ? 0x37 : 0x30);
+              console_putc(hex_digit);
             }
             console_putc(':');
             console_putc(' ');
-            ptr = (uint8_t*)arg;
-            for (i = 0; i < 16; i++) {
-              n = (ptr[i] >> 4) & 15;
-              n += (n > 9 ? 0x37 : 0x30);
-              console_putc(n);
-              n = ptr[i] & 15;
-              n += (n > 9 ? 0x37 : 0x30);
-              console_putc(n);
+            byte_ptr = (uint8_t*)arg;
+            for (idx = 0; idx < 16; idx++) {
+              hex_digit = (byte_ptr[idx] >> 4) & 15;
+              hex_digit += (hex_digit > 9 ? 0x37 : 0x30);
+              console_putc(hex_digit);
+              hex_digit = byte_ptr[idx] & 15;
+              hex_digit += (hex_digit > 9 ? 0x37 : 0x30);
+              console_putc(hex_digit);
               console_putc(' ');
             }
             console_putc(' ');
-            for (i = 0; i < 16; i++) {
-              console_putc(ptr[i] < 32 || ptr[i] >= 127 ? '.' : ptr[i]);
+            for (idx = 0; idx < 16; idx++) {
+              console_putc(byte_ptr[idx] < 32 || byte_ptr[idx] >= 127
+                             ? '.'
+                             : byte_ptr[idx]);
             }
             console_putc('\r');
             console_putc('\n');
