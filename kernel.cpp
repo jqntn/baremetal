@@ -384,6 +384,16 @@ extern "C"
       uuid[15]);
   }
 
+  void test_fb()
+  {
+    uint32_t col = FB_COLOR(255, 0, 255);
+    uint32_t len = vidmode.framebuffer_width * vidmode.framebuffer_height;
+    uint32_t* fb = (uint32_t*)vidmode.framebuffer_addr;
+
+    for (; len--;)
+      *fb++ = col;
+  }
+
   void _start(uint32_t magic, uintptr_t addr)
   {
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
@@ -536,6 +546,8 @@ extern "C"
 
     console_init();
     printf("Hello, world!\n");
+
+    test_fb();
 
   halt:
     for (;;)
