@@ -75,11 +75,11 @@ extern "C"
   uint16_t vga_fg;
 #endif
 
-  void console_init(const multiboot_tag_framebuffer_t* p_mb_tag_fb)
+  void console_init(const multiboot_tag_framebuffer_t* opt_mb_tag_fb)
   {
 #ifdef CONSOLE_FB
-    if (p_mb_tag_fb)
-      vidmode = *p_mb_tag_fb;
+    if (opt_mb_tag_fb)
+      vidmode = *opt_mb_tag_fb;
     fb_x = fb_y = 4;
     fb_bg = FB_COLOR(0, 0, 255);
 #endif
