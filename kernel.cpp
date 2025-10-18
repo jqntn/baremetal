@@ -75,10 +75,8 @@ extern "C"
   uint16_t vga_fg;
 #endif
 
-  void console_init(const multiboot_tag_framebuffer_t* opt_fb)
+  void console_init()
   {
-    if (opt_fb)
-      vidmode = *opt_fb;
 #ifdef CONSOLE_FB
     fb_x = fb_y = 4;
     fb_bg = FB_COLOR(0, 0, 255);
@@ -92,7 +90,7 @@ extern "C"
 #endif
   }
 
-  void console_putc(uint8_t c)
+  void console_putc(const uint8_t c)
   {
 #ifdef CONSOLE_SERIAL
     asm volatile("movb    %0, %%bl;"
@@ -387,7 +385,7 @@ extern "C"
   void _start(uint32_t magic, uintptr_t addr)
   {
     if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
-      console_init(nullptr);
+      console_init();
       printf("INVALID MB2 MAGIC NUMBER: 0x%x\n", magic);
       goto halt;
     }
@@ -532,7 +530,9 @@ extern "C"
 
     printf("\n\n");
 
-    console_init(fb);
+    vidmode = *fb;
+
+    console_init();
     printf("Hello, world!\n");
 
   halt:
