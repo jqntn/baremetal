@@ -4,14 +4,14 @@
 
 setlocal
 
-set CLANG_FLAGS=-c --target=i386-elf -Wall -Wextra -Werror -ffreestanding -fno-exceptions -fno-unwind-tables -fno-rtti -fno-stack-protector -fno-strict-aliasing -fno-builtin -fno-common
+set CLANG_FLAGS=-c --target=i386-elf -Wall -Wextra -Werror -ffreestanding -fno-exceptions -fno-unwind-tables -fno-rtti -fno-stack-protector -fno-strict-aliasing -fno-builtin -fno-common -I"thirdparty"
 set LD_FLAGS=-m elf_i386 --entry=_start --Ttext=0x100000 --image-base=0x100000 --omagic --nostdlib --static
 
 if not exist bin md bin
 if not exist obj md obj
 if not exist boot md boot
 
-clang++ %CLANG_FLAGS% "kernel.cpp" -o "obj\kernel.o"
+clang %CLANG_FLAGS% "kernel.c" -o "obj\kernel.o"
 
 ld.lld %LD_FLAGS% "obj\kernel.o" -o "boot\kernel.elf"
 
