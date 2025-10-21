@@ -1,26 +1,16 @@
 #include <stdarg.h>
 #include <stdint.h>
+#include <string.h>
+#include <wchar.h>
 
 __attribute__((section(".multiboot"), aligned(4), used))
 const uint32_t multiboot_header[] = { 0x1BADB002, 0, -(0x1BADB002 + 0) };
 
 #include "thirdparty/arith64/arith64.c"
-#include "thirdparty/printf/printf.c"
 #include "thirdparty/simpleboot/simpleboot.h"
 
-void
-memcpy(void* dst, const void* src, unsigned long n)
-{
-  for (unsigned char *d = (unsigned char*)dst, *s = (unsigned char*)src; n--;)
-    *d++ = *s++;
-}
-
-void
-memset(void* dst, unsigned char c, unsigned long n)
-{
-  for (unsigned char* d = (unsigned char*)dst; n--;)
-    *d++ = c;
-}
+#define PRINTF_ALIAS_STANDARD_FUNCTION_NAMES_HARD 1
+#include "thirdparty/printf/printf.c"
 
 #define CONSOLE_SERIAL 0x3F8
 #define CONSOLE_FB
@@ -64,9 +54,23 @@ console_init()
 #endif
 }
 
-void
-putchar_(char c)
+wchar_t*
+wcschr(const wchar_t* wcptr_, wchar_t wc_)
 {
+  (void)wcptr_;
+  (void)wc_;
+
+  return NULL;
+}
+
+long
+write(int i_, const char* cptr, unsigned long ul_)
+{
+  (void)i_;
+  (void)ul_;
+
+  const char c = *cptr;
+
 #ifdef CONSOLE_SERIAL
   asm volatile("movb    %0, %%bl;"
                "movl    $10000, %%ecx;"
@@ -180,6 +184,8 @@ putchar_(char c)
     }
   }
 #endif
+
+  return 0;
 }
 
 /*
@@ -188,7 +194,7 @@ putchar_(char c)
 void
 dumpuuid(const uint8_t* uuid)
 {
-  printf_(
+  printf(
     "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X%02X%02X\n",
     uuid[3],
     uuid[2],
@@ -224,20 +230,20 @@ _start(uint32_t magic, uintptr_t addr)
 {
   if (magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
     console_init();
-    printf_("INVALID MB2 MAGIC NUMBER: 0x%X\n", magic);
+    printf("INVALID MB2 MAGIC NUMBER: 0x%X\n", magic);
     goto halt;
   }
 
-  printf_("\n\n");
+  printf("\n\n");
 
   if (addr & 7) {
-    printf_("unaligned MBI: %p\n", (void*)addr);
+    printf("unaligned MBI: %p\n", (void*)addr);
     goto halt;
   }
 
   uint32_t size;
   size = ((multiboot_info_t*)addr)->total_size;
-  printf_("announced MBI size %#x\n", size);
+  printf("announced MBI size %#x\n", size);
 
   multiboot_mmap_entry_t* mmap;
   multiboot_tag_framebuffer_t* fb;
@@ -248,126 +254,126 @@ _start(uint32_t magic, uintptr_t addr)
        tag = (multiboot_tag_t*)((uint8_t*)tag + ((tag->size + 7) & ~7))) {
     switch (tag->type) {
       case MULTIBOOT_TAG_TYPE_CMDLINE: {
-        printf_("  command line = %s\n",
-                ((multiboot_tag_cmdline_t*)tag)->string);
+        printf("  command line = %s\n",
+               ((multiboot_tag_cmdline_t*)tag)->string);
       } break;
       case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME: {
-        printf_("  boot loader name = %s\n",
-                ((multiboot_tag_loader_t*)tag)->string);
+        printf("  boot loader name = %s\n",
+               ((multiboot_tag_loader_t*)tag)->string);
       } break;
       case MULTIBOOT_TAG_TYPE_MODULE: {
-        printf_("  module at %#x-%#x. command line %s\n",
-                ((multiboot_tag_module_t*)tag)->mod_start,
-                ((multiboot_tag_module_t*)tag)->mod_end,
-                ((multiboot_tag_module_t*)tag)->string);
+        printf("  module at %#x-%#x. command line %s\n",
+               ((multiboot_tag_module_t*)tag)->mod_start,
+               ((multiboot_tag_module_t*)tag)->mod_end,
+               ((multiboot_tag_module_t*)tag)->string);
       } break;
       case MULTIBOOT_TAG_TYPE_MMAP: {
-        printf_("  mmap\n");
+        printf("  mmap\n");
         for (mmap = ((multiboot_tag_mmap_t*)tag)->entries;
              (uint8_t*)mmap < (uint8_t*)tag + tag->size;
              mmap = (multiboot_mmap_entry_t*)((uintptr_t)mmap +
                                               ((multiboot_tag_mmap_t*)tag)
                                                 ->entry_size)) {
-          printf_("    base_addr = %p, length = %p, type = %#x %s, res = %#x\n",
-                  (void*)mmap->base_addr,
-                  (void*)mmap->length,
-                  mmap->type,
-                  mmap->type == MULTIBOOT_MEMORY_AVAILABLE
-                    ? "free"
-                    : (mmap->type == MULTIBOOT_MEMORY_ACPI_RECLAIMABLE
-                         ? "ACPI"
-                         : (mmap->type == MULTIBOOT_MEMORY_NVS ? "ACPI NVS"
-                                                               : "used")),
-                  mmap->reserved);
+          printf("    base_addr = %p, length = %p, type = %#x %s, res = %#x\n",
+                 (void*)mmap->base_addr,
+                 (void*)mmap->length,
+                 mmap->type,
+                 mmap->type == MULTIBOOT_MEMORY_AVAILABLE
+                   ? "free"
+                   : (mmap->type == MULTIBOOT_MEMORY_ACPI_RECLAIMABLE
+                        ? "ACPI"
+                        : (mmap->type == MULTIBOOT_MEMORY_NVS ? "ACPI NVS"
+                                                              : "used")),
+                 mmap->reserved);
         }
       } break;
       case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
         fb = (multiboot_tag_framebuffer_t*)tag;
-        printf_("  framebuffer\n");
-        printf_("    address %p pitch %d\n",
-                (void*)fb->framebuffer_addr,
-                fb->framebuffer_pitch);
-        printf_("    width %d height %d depth %d bpp\n",
-                fb->framebuffer_width,
-                fb->framebuffer_height,
-                fb->framebuffer_bpp);
-        printf_("    red channel:   at %d, %d bits\n",
-                fb->framebuffer_red_field_position,
-                fb->framebuffer_red_mask_size);
-        printf_("    green channel: at %d, %d bits\n",
-                fb->framebuffer_green_field_position,
-                fb->framebuffer_green_mask_size);
-        printf_("    blue channel:  at %d, %d bits\n",
-                fb->framebuffer_blue_field_position,
-                fb->framebuffer_blue_mask_size);
+        printf("  framebuffer\n");
+        printf("    address %p pitch %d\n",
+               (void*)fb->framebuffer_addr,
+               fb->framebuffer_pitch);
+        printf("    width %d height %d depth %d bpp\n",
+               fb->framebuffer_width,
+               fb->framebuffer_height,
+               fb->framebuffer_bpp);
+        printf("    red channel:   at %d, %d bits\n",
+               fb->framebuffer_red_field_position,
+               fb->framebuffer_red_mask_size);
+        printf("    green channel: at %d, %d bits\n",
+               fb->framebuffer_green_field_position,
+               fb->framebuffer_green_mask_size);
+        printf("    blue channel:  at %d, %d bits\n",
+               fb->framebuffer_blue_field_position,
+               fb->framebuffer_blue_mask_size);
       } break;
       case MULTIBOOT_TAG_TYPE_EFI64: {
-        printf_("  EFI system table %p\n",
-                (void*)((multiboot_tag_efi64_t*)tag)->pointer);
+        printf("  EFI system table %p\n",
+               (void*)((multiboot_tag_efi64_t*)tag)->pointer);
       } break;
       case MULTIBOOT_TAG_TYPE_EFI64_IH: {
-        printf_("  EFI image handle %p\n",
-                (void*)((multiboot_tag_efi64_t*)tag)->pointer);
+        printf("  EFI image handle %p\n",
+               (void*)((multiboot_tag_efi64_t*)tag)->pointer);
       } break;
       case MULTIBOOT_TAG_TYPE_SMBIOS: {
-        printf_("  SMBIOS table major %d minor %d\n",
-                ((multiboot_tag_smbios_t*)tag)->major,
-                ((multiboot_tag_smbios_t*)tag)->minor);
+        printf("  SMBIOS table major %d minor %d\n",
+               ((multiboot_tag_smbios_t*)tag)->major,
+               ((multiboot_tag_smbios_t*)tag)->minor);
       } break;
       case MULTIBOOT_TAG_TYPE_ACPI_OLD: {
-        printf_("  ACPI table (1.0, old RSDP)\n");
+        printf("  ACPI table (1.0, old RSDP)\n");
       } break;
       case MULTIBOOT_TAG_TYPE_ACPI_NEW: {
-        printf_("  ACPI table (2.0, new RSDP)\n");
+        printf("  ACPI table (2.0, new RSDP)\n");
       } break;
       case MULTIBOOT_TAG_TYPE_EDID: {
-        printf_("  EDID info\n");
-        printf_("    manufacturer ID %02X%02X\n",
-                ((multiboot_tag_edid_t*)tag)->edid[8],
-                ((multiboot_tag_edid_t*)tag)->edid[9]);
-        printf_("    EDID ID %02X%02X version %d rev %d\n",
-                ((multiboot_tag_edid_t*)tag)->edid[10],
-                ((multiboot_tag_edid_t*)tag)->edid[11],
-                ((multiboot_tag_edid_t*)tag)->edid[18],
-                ((multiboot_tag_edid_t*)tag)->edid[19]);
-        printf_("    monitor type %02X size %d cm x %d cm\n",
-                ((multiboot_tag_edid_t*)tag)->edid[20],
-                ((multiboot_tag_edid_t*)tag)->edid[21],
-                ((multiboot_tag_edid_t*)tag)->edid[22]);
+        printf("  EDID info\n");
+        printf("    manufacturer ID %02X%02X\n",
+               ((multiboot_tag_edid_t*)tag)->edid[8],
+               ((multiboot_tag_edid_t*)tag)->edid[9]);
+        printf("    EDID ID %02X%02X version %d rev %d\n",
+               ((multiboot_tag_edid_t*)tag)->edid[10],
+               ((multiboot_tag_edid_t*)tag)->edid[11],
+               ((multiboot_tag_edid_t*)tag)->edid[18],
+               ((multiboot_tag_edid_t*)tag)->edid[19]);
+        printf("    monitor type %02X size %d cm x %d cm\n",
+               ((multiboot_tag_edid_t*)tag)->edid[20],
+               ((multiboot_tag_edid_t*)tag)->edid[21],
+               ((multiboot_tag_edid_t*)tag)->edid[22]);
       } break;
       case MULTIBOOT_TAG_TYPE_SMP: {
-        printf_("  SMP supported\n");
-        printf_("    %d core(s)\n", ((multiboot_tag_smp_t*)tag)->numcores);
-        printf_("    %d running\n", ((multiboot_tag_smp_t*)tag)->running);
-        printf_("    %02X bsp id\n", ((multiboot_tag_smp_t*)tag)->bspid);
+        printf("  SMP supported\n");
+        printf("    %d core(s)\n", ((multiboot_tag_smp_t*)tag)->numcores);
+        printf("    %d running\n", ((multiboot_tag_smp_t*)tag)->running);
+        printf("    %02X bsp id\n", ((multiboot_tag_smp_t*)tag)->bspid);
       } break;
       case MULTIBOOT_TAG_TYPE_PARTUUID: {
-        printf_("  partition UUIDs\n");
-        printf_("    boot ");
+        printf("  partition UUIDs\n");
+        printf("    boot ");
         dumpuuid(((multiboot_tag_partuuid_t*)tag)->bootuuid);
         if (tag->size >= 40) {
-          printf_("    root ");
+          printf("    root ");
           dumpuuid(((multiboot_tag_partuuid_t*)tag)->rootuuid);
         }
       } break;
       default: {
-        printf_("  /!\\ UNKNOWN MBI TAG /!\\\n");
+        printf("  /!\\ UNKNOWN MBI TAG /!\\\n");
         goto halt;
       } break;
     }
   }
 
   tag = (multiboot_tag_t*)((uint8_t*)tag + ((tag->size + 7) & ~7));
-  printf_("total MBI size %#x %s\n",
-          (uint32_t)((uintptr_t)tag - addr),
-          ((uintptr_t)tag - addr) == size ? "OK" : "ERR");
+  printf("total MBI size %#x %s\n",
+         (uint32_t)((uintptr_t)tag - addr),
+         ((uintptr_t)tag - addr) == size ? "OK" : "ERR");
 
-  printf_("\n\n");
+  printf("\n\n");
 
   vidmode = *fb;
 
   console_init();
-  printf_("Hello, world!\n");
+  printf("Hello, world!\n");
 
   test_fb();
 
