@@ -48,13 +48,16 @@ if not exist obj md obj
 
 clang %CLANG_FLAGS% %CLANG_FLAGS_KERNEL% "kernel.c" -o "obj\kernel.o" || exit /b 1
 
-for /r "thirdparty\arith64" %%f in (*.c) do clang %CLANG_FLAGS% "%%f" -o "obj\%%~nf.o" || exit /b 1
-for /r "thirdparty\printf" %%f in (*.c) do clang %CLANG_FLAGS% "%%f" -o "obj\%%~nf.o" || exit /b 1
-for /r "thirdparty\libc\src" %%f in (*.c) do clang %CLANG_FLAGS% -DDISABLE_UNIMPLEMENTED_LIBC_APIS "%%f" -o "obj\%%~nf.o" || exit /b 1
-for /r "thirdparty\gdtoa\src" %%f in (*.c) do clang %CLANG_FLAGS% -DNO_ERRNO -DIFNAN_CHECK -DGDTOA_NO_ASSERT -DNO_FENV_H -DNO_IEEE_Scale "%%f" -o "obj\%%~nf.o" || exit /b 1
-for /r "thirdparty\libmemory\src" %%f in (*.c) do clang %CLANG_FLAGS% "%%f" -o "obj\%%~nf.o" || exit /b 1
+if not exist lib (
+    md lib
+    for /r "thirdparty\arith64" %%f in (*.c) do clang %CLANG_FLAGS% "%%f" -o "lib\%%~nf.o" || exit /b 1
+    for /r "thirdparty\printf" %%f in (*.c) do clang %CLANG_FLAGS% "%%f" -o "lib\%%~nf.o" || exit /b 1
+    for /r "thirdparty\libc\src" %%f in (*.c) do clang %CLANG_FLAGS% -DDISABLE_UNIMPLEMENTED_LIBC_APIS "%%f" -o "lib\%%~nf.o" || exit /b 1
+    for /r "thirdparty\gdtoa\src" %%f in (*.c) do clang %CLANG_FLAGS% -DNO_ERRNO -DIFNAN_CHECK -DGDTOA_NO_ASSERT -DNO_FENV_H -DNO_IEEE_Scale "%%f" -o "lib\%%~nf.o" || exit /b 1
+    for /r "thirdparty\libmemory\src" %%f in (*.c) do clang %CLANG_FLAGS% "%%f" -o "lib\%%~nf.o" || exit /b 1
+)
 
-ld.lld %LD_FLAGS% "obj\*.o" -o "boot\kernel.elf" || exit /b 1
+ld.lld %LD_FLAGS% "obj\*.o" "lib\*.o" -o "boot\kernel.elf" || exit /b 1
 
 "thirdparty\simpleboot\simpleboot.exe" -vv -c -k "kernel.elf" "boot" "bin\disk.img"
 qemu-system-x86_64 -drive file="bin\disk.img",format=raw -display sdl -vga std -serial stdio
