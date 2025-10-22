@@ -9,7 +9,6 @@ set LINK_FLAGS=/NOLOGO /MACHINE:X86 /ENTRY:_start /BASE:0x100000 /NODEFAULTLIB /
 
 if not exist bin md bin
 if not exist obj md obj
-if not exist boot md boot
 
 cl %CL_FLAGS% "kernel.cpp"
 
