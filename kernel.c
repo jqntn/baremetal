@@ -1,13 +1,12 @@
+__attribute__((section(".multiboot"), aligned(4), used))
+const int multiboot_header[] = { 0x1BADB002, 0, -(0x1BADB002 + 0) };
+
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
 
-__attribute__((section(".multiboot"), aligned(4), used))
-const uint32_t multiboot_header[] = { 0x1BADB002, 0, -(0x1BADB002 + 0) };
-
-#include "thirdparty/arith64/arith64.c"
 #include "thirdparty/simpleboot/simpleboot.h"
 
 #define CONSOLE_SERIAL 0x3F8
@@ -41,7 +40,7 @@ uint16_t vga_fg = 0xF;
 #endif
 
 void
-console_init()
+console_init(void)
 {
 #ifdef CONSOLE_FB
   fb_bg = FB_COLOR(0, 0, 255);
@@ -70,23 +69,23 @@ write(int i_, const char* cptr, unsigned long ul_)
   const char c = *cptr;
 
 #ifdef CONSOLE_SERIAL
-  asm volatile("movb    %0, %%bl;"
-               "movl    $10000, %%ecx;"
-               "1:"
-               "inb     %%dx, %%al;"
-               "cmpb    $0xff, %%al;"
-               "je      2f;"
-               "dec     %%ecx;"
-               "jz      2f;"
-               "testb   $0x20, %%al;"
-               "jz      1b;"
-               "subb    $5, %%dl;"
-               "movb    %%bl, %%al;"
-               "outb    %%al, %%dx;"
-               "2:"
-               :
-               : "r"(c), "d"(CONSOLE_SERIAL + 5)
-               : "al", "bl", "ecx");
+  __asm__ volatile("movb    %0, %%bl;"
+                   "movl    $10000, %%ecx;"
+                   "1:"
+                   "inb     %%dx, %%al;"
+                   "cmpb    $0xff, %%al;"
+                   "je      2f;"
+                   "dec     %%ecx;"
+                   "jz      2f;"
+                   "testb   $0x20, %%al;"
+                   "jz      1b;"
+                   "subb    $5, %%dl;"
+                   "movb    %%bl, %%al;"
+                   "outb    %%al, %%dx;"
+                   "2:"
+                   :
+                   : "r"(c), "d"(CONSOLE_SERIAL + 5)
+                   : "al", "bl", "ecx");
 #endif
 #ifdef CONSOLE_FB
   psf2_t* font = (psf2_t*)font_psf;
@@ -213,7 +212,7 @@ dumpuuid(const uint8_t* uuid)
 }
 
 void
-test_fb()
+test_fb(void)
 {
   uint32_t col = FB_COLOR(255, 0, 255);
   uint32_t len = vidmode.framebuffer_width * vidmode.framebuffer_height;
