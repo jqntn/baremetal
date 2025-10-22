@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <wchar.h>
 
@@ -8,9 +9,6 @@ const uint32_t multiboot_header[] = { 0x1BADB002, 0, -(0x1BADB002 + 0) };
 
 #include "thirdparty/arith64/arith64.c"
 #include "thirdparty/simpleboot/simpleboot.h"
-
-#define PRINTF_ALIAS_STANDARD_FUNCTION_NAMES_HARD 1
-#include "thirdparty/printf/printf.c"
 
 #define CONSOLE_SERIAL 0x3F8
 #define CONSOLE_FB
