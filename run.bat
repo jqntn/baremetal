@@ -29,7 +29,6 @@ set CLANG_FLAGS=^
 -DPRINTF_ALIAS_STANDARD_FUNCTION_NAMES_HARD
 
 set CLANG_FLAGS_KERNEL=^
--std=c99 ^
 -Wstrict-prototypes ^
 -Wunreachable-code ^
 -Wshadow
